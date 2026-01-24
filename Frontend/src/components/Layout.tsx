@@ -14,7 +14,7 @@ interface LayoutProps {
 
 export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const { signOut } = useAuth();
+  const { signOut, user } = useAuth();
   const { searchQuery, setSearchQuery, searchResults, isSearchOpen, setIsSearchOpen } = useSearch();
   const searchRef = useRef<HTMLDivElement>(null);
 
@@ -93,6 +93,36 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
     } catch (error) {
       console.error("Failed to sign out", error);
     }
+  };
+
+  // Get user's first name from display name or email
+  const getUserFirstName = () => {
+    if (!user) return '';
+    
+    // Try to get from displayName first
+    if (user.displayName) {
+      return user.displayName.split(' ')[0];
+    }
+    
+    // Fallback to email username
+    if (user.email) {
+      return user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1);
+    }
+    
+    return 'User';
+  };
+
+  // Get possessive form of name
+  const getPossessiveName = () => {
+    const firstName = getUserFirstName();
+    if (!firstName) return '';
+    
+    // If name ends with 's', just add apostrophe
+    if (firstName.toLowerCase().endsWith('s')) {
+      return `${firstName}'`;
+    }
+    // Otherwise add 's
+    return `${firstName}'s`;
   };
 
   return (
@@ -209,11 +239,13 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
         <div className={`p-4 border-t border-slate-100 dark:border-slate-700 ${!sidebarOpen && 'flex justify-center'}`}>
           <button className="flex items-center w-full group">
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
-              JD
+              {user?.displayName ? user.displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : user?.email ? user.email.slice(0, 2).toUpperCase() : 'U'}
             </div>
             {sidebarOpen && (
               <div className="ml-3 text-left">
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">John Doe</p>
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                  {user?.displayName || (user?.email ? user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1) : 'User')}
+                </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">Pro Plan</p>
               </div>
             )}
@@ -228,7 +260,7 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
             <div className="flex flex-col">
               <div className="flex items-center space-x-2">
                 <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 dark:from-slate-100 dark:via-indigo-200 dark:to-slate-100 bg-clip-text text-transparent tracking-tight">
-                  {navItems.find(n => n.id === activeLayer)?.label || 'Dashboard'}
+                  {getPossessiveName()} {navItems.find(n => n.id === activeLayer)?.label || 'Dashboard'}
                 </h1>
               </div>
               <div className="flex items-center space-x-1.5 text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
