@@ -71,7 +71,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                         <div className="w-12 h-12 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center mr-4">
                             <Sparkles className="w-7 h-7 text-white" />
                         </div>
-                        <span className="text-3xl font-bold tracking-tight">SovereignCFO</span>
+                        <span className="text-3xl font-bold tracking-tight">OnlyFinances.ai</span>
                     </div>
 
                     {/* Headline */}
@@ -120,7 +120,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                         <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center mr-3">
                             <Sparkles className="w-6 h-6 text-white" />
                         </div>
-                        <span className="text-2xl font-bold text-slate-900 dark:text-white">SovereignCFO</span>
+                        <span className="text-2xl font-bold text-slate-900 dark:text-white">OnlyFinances.ai</span>
                     </div>
 
                     {/* Form Card */}

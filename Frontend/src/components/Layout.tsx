@@ -154,7 +154,7 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
                 onClick={() => setActiveLayer('dashboard')}
                 className="font-bold text-xl tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
               >
-                SovereignCFO
+                OnlyFinances.ai
               </button>
             )}
           </div>

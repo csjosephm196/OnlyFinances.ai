@@ -1,4 +1,4 @@
-// Firestore utility functions for SovereignCFO
+// Firestore utility functions for OnlyFinances.ai
 import {
     collection,
     doc,
