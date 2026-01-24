@@ -4,15 +4,15 @@ import { getAnalytics, isSupported } from "firebase/analytics";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
 
-// Your web app's Firebase configuration
+// Your web app's Firebase configuration (loaded from environment variables)
 const firebaseConfig = {
-    apiKey: "AIzaSyAPw6kln4dapLrUB3QMfWpwV-E7jnleY3s",
-    authDomain: "soverigncfo.firebaseapp.com",
-    projectId: "soverigncfo",
-    storageBucket: "soverigncfo.firebasestorage.app",
-    messagingSenderId: "884964125145",
-    appId: "1:884964125145:web:bf6e653d5e2a1e19ec91c8",
-    measurementId: "G-5NCYXSPSWT"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
 // Initialize Firebase
