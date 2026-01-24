@@ -10,7 +10,7 @@ export function IncomeStatementUploader() {
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const { incomeStatementData, setIncomeStatementData, saveToFirebase, isSaving } = useBudget();
+    const { incomeStatementData, setIncomeStatementData, saveIncomeStatementToFirebase, isSaving } = useBudget();
 
     const handleFileSelect = async (file: File) => {
         // Validate file type
@@ -33,9 +33,9 @@ export function IncomeStatementUploader() {
 
             if (response.success) {
                 setIncomeStatementData(response);
-                // Auto-save to Firebase
+                // Auto-save to Firebase - pass response data directly
                 try {
-                    await saveToFirebase(file.name, 'incomeStatement');
+                    await saveIncomeStatementToFirebase(file.name, response);
                 } catch (saveError) {
                     console.error('Failed to save to Firebase:', saveError);
                 }
