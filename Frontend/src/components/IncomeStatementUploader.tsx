@@ -10,7 +10,7 @@ export function IncomeStatementUploader() {
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const { incomeStatementData, setIncomeStatementData } = useBudget();
+    const { incomeStatementData, setIncomeStatementData, saveToFirebase, isSaving } = useBudget();
 
     const handleFileSelect = async (file: File) => {
         // Validate file type
@@ -33,6 +33,12 @@ export function IncomeStatementUploader() {
 
             if (response.success) {
                 setIncomeStatementData(response);
+                // Auto-save to Firebase
+                try {
+                    await saveToFirebase(file.name, 'incomeStatement');
+                } catch (saveError) {
+                    console.error('Failed to save to Firebase:', saveError);
+                }
             } else {
                 setError(response.message || 'Failed to process income statement');
             }
@@ -275,8 +281,8 @@ function TypeBadge({ type }: { type: 'revenue' | 'expense' }) {
     return (
         <span
             className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border ${isRevenue
-                    ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400'
-                    : 'bg-rose-50 dark:bg-rose-900/30 border-rose-200 dark:border-rose-700 text-rose-700 dark:text-rose-400'
+                ? 'bg-emerald-50 dark:bg-emerald-900/30 border-emerald-200 dark:border-emerald-700 text-emerald-700 dark:text-emerald-400'
+                : 'bg-rose-50 dark:bg-rose-900/30 border-rose-200 dark:border-rose-700 text-rose-700 dark:text-rose-400'
                 }`}
         >
             {isRevenue ? '💰 Revenue' : '💸 Expense'}

@@ -1,0 +1,61 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Users can only access their own profile
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    
+    // Conversations - users can only access their own
+    match /conversations/{conversationId} {
+      allow read, update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // Messages subcollection - parent conversation ownership is checked above
+      match /messages/{messageId} {
+        allow read, write: if request.auth != null;
+      }
+    }
+    
+    // Budget History - users can only access their own
+    match /budgetHistory/{documentId} {
+      allow read, update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+      
+      // Transactions subcollection
+      match /transactions/{transactionId} {
+        allow read, write: if request.auth != null;
+      }
+    }
+    
+    // Balance Sheets - users can only access their own
+    match /balanceSheets/{documentId} {
+      allow read, update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+        
+      // Items subcollection
+      match /items/{itemId} {
+        allow read, write: if request.auth != null;
+      }
+    }
+    
+    // Income Statements - users can only access their own
+    match /incomeStatements/{documentId} {
+      allow read, update, delete: if request.auth != null && 
+        resource.data.userId == request.auth.uid;
+      allow create: if request.auth != null && 
+        request.resource.data.userId == request.auth.uid;
+        
+      // Items subcollection
+      match /items/{itemId} {
+        allow read, write: if request.auth != null;
+      }
+    }
+  }
+}

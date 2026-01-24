@@ -11,6 +11,7 @@ import {
     sendPasswordResetEmail
 } from 'firebase/auth';
 import { auth } from '../lib/firebase';
+import { createUserProfile, getUserProfile } from '../services/firestoreService';
 
 export interface AuthState {
     user: User | null;
@@ -26,7 +27,23 @@ export function useAuth() {
     });
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (user) => {
+        const unsubscribe = onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // Check if user profile exists, create if not
+                try {
+                    const profile = await getUserProfile(user.uid);
+                    if (!profile) {
+                        await createUserProfile(
+                            user.uid,
+                            user.email || '',
+                            user.displayName,
+                            user.photoURL
+                        );
+                    }
+                } catch (err) {
+                    console.error('Failed to check/create user profile:', err);
+                }
+            }
             setAuthState({
                 user,
                 loading: false,
@@ -56,7 +73,15 @@ export function useAuth() {
     const signUp = async (email: string, password: string) => {
         try {
             setAuthState(prev => ({ ...prev, loading: true, error: null }));
-            await createUserWithEmailAndPassword(auth, email, password);
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+
+            // Create user profile in Firestore
+            await createUserProfile(
+                userCredential.user.uid,
+                email,
+                null,
+                null
+            );
         } catch (error: any) {
             setAuthState(prev => ({
                 ...prev,
@@ -72,7 +97,18 @@ export function useAuth() {
         try {
             setAuthState(prev => ({ ...prev, loading: true, error: null }));
             const provider = new GoogleAuthProvider();
-            await signInWithPopup(auth, provider);
+            const userCredential = await signInWithPopup(auth, provider);
+
+            // Check if profile exists, create if not (handled in onAuthStateChanged)
+            const profile = await getUserProfile(userCredential.user.uid);
+            if (!profile) {
+                await createUserProfile(
+                    userCredential.user.uid,
+                    userCredential.user.email || '',
+                    userCredential.user.displayName,
+                    userCredential.user.photoURL
+                );
+            }
         } catch (error: any) {
             setAuthState(prev => ({
                 ...prev,
