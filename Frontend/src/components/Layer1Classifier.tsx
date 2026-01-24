@@ -11,7 +11,7 @@ export function Layer1Classifier() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { processingResult, setProcessingResult, saveToFirebase, isSaving } = useBudget();
+  const { processingResult, setProcessingResult, saveBudgetToFirebase, isSaving } = useBudget();
 
   const handleFileSelect = async (file: File) => {
     // Validate file type
@@ -34,9 +34,9 @@ export function Layer1Classifier() {
 
       if (response.success) {
         setProcessingResult(response);
-        // Auto-save to Firebase
+        // Auto-save to Firebase - pass response data directly
         try {
-          await saveToFirebase(file.name, 'budget');
+          await saveBudgetToFirebase(file.name, response);
         } catch (saveError) {
           console.error('Failed to save to Firebase:', saveError);
           // Don't show error to user - the processing succeeded

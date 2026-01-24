@@ -32,8 +32,10 @@ interface BudgetContextType {
     setIncomeStatementData: (data: IncomeStatementData | null) => void;
     clearData: () => void;
 
-    // Firebase persistence functions
-    saveToFirebase: (fileName: string, type: 'budget' | 'balanceSheet' | 'incomeStatement') => Promise<void>;
+    // Firebase persistence functions - now accepts data directly
+    saveBudgetToFirebase: (fileName: string, data: ProcessingResult) => Promise<void>;
+    saveBalanceSheetToFirebase: (fileName: string, data: BalanceSheetData) => Promise<void>;
+    saveIncomeStatementToFirebase: (fileName: string, data: IncomeStatementData) => Promise<void>;
 
     // History
     budgetHistoryList: BudgetHistoryWithId[];
@@ -72,37 +74,66 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
         setIncomeStatementData(null);
     };
 
-    // Save current data to Firebase
-    const saveToFirebase = useCallback(async (fileName: string, type: 'budget' | 'balanceSheet' | 'incomeStatement') => {
-        if (!user) return;
+    // Save budget data to Firebase - accepts data directly
+    const saveBudgetToFirebase = useCallback(async (fileName: string, data: ProcessingResult) => {
+        if (!user) {
+            console.log('No user logged in, skipping save');
+            return;
+        }
         setIsSaving(true);
         try {
-            switch (type) {
-                case 'budget':
-                    if (processingResult) {
-                        await saveBudgetHistory(user.uid, fileName, processingResult);
-                    }
-                    break;
-                case 'balanceSheet':
-                    if (balanceSheetData) {
-                        await saveBalanceSheet(user.uid, fileName, balanceSheetData);
-                    }
-                    break;
-                case 'incomeStatement':
-                    if (incomeStatementData) {
-                        await saveIncomeStatement(user.uid, fileName, incomeStatementData);
-                    }
-                    break;
-            }
+            console.log('Saving budget to Firebase:', fileName, data.total_transactions, 'transactions');
+            await saveBudgetHistory(user.uid, fileName, data);
+            console.log('Budget saved successfully');
             // Refresh history after saving
             await loadHistory();
         } catch (err) {
-            console.error('Failed to save to Firebase:', err);
+            console.error('Failed to save budget to Firebase:', err);
             throw err;
         } finally {
             setIsSaving(false);
         }
-    }, [user, processingResult, balanceSheetData, incomeStatementData]);
+    }, [user]);
+
+    // Save balance sheet data to Firebase - accepts data directly
+    const saveBalanceSheetToFirebase = useCallback(async (fileName: string, data: BalanceSheetData) => {
+        if (!user) {
+            console.log('No user logged in, skipping save');
+            return;
+        }
+        setIsSaving(true);
+        try {
+            console.log('Saving balance sheet to Firebase:', fileName);
+            await saveBalanceSheet(user.uid, fileName, data);
+            console.log('Balance sheet saved successfully');
+            await loadHistory();
+        } catch (err) {
+            console.error('Failed to save balance sheet to Firebase:', err);
+            throw err;
+        } finally {
+            setIsSaving(false);
+        }
+    }, [user]);
+
+    // Save income statement data to Firebase - accepts data directly
+    const saveIncomeStatementToFirebase = useCallback(async (fileName: string, data: IncomeStatementData) => {
+        if (!user) {
+            console.log('No user logged in, skipping save');
+            return;
+        }
+        setIsSaving(true);
+        try {
+            console.log('Saving income statement to Firebase:', fileName);
+            await saveIncomeStatement(user.uid, fileName, data);
+            console.log('Income statement saved successfully');
+            await loadHistory();
+        } catch (err) {
+            console.error('Failed to save income statement to Firebase:', err);
+            throw err;
+        } finally {
+            setIsSaving(false);
+        }
+    }, [user]);
 
     // Load all history from Firebase
     const loadHistory = useCallback(async () => {
@@ -156,7 +187,9 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
             incomeStatementData,
             setIncomeStatementData,
             clearData,
-            saveToFirebase,
+            saveBudgetToFirebase,
+            saveBalanceSheetToFirebase,
+            saveIncomeStatementToFirebase,
             budgetHistoryList,
             balanceSheetHistoryList,
             incomeStatementHistoryList,
