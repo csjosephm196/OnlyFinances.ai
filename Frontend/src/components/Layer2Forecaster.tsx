@@ -379,13 +379,13 @@ export function Layer2Forecaster() {
                     </div>
                     
                     {selectedDateDetails.revenues > 0 && (
-                      <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-slate-600 dark:text-slate-400 flex items-center">
-                            <ArrowUp className="w-3 h-3 mr-1 text-emerald-600 dark:text-emerald-400" />
-                            {selectedDateDetails.type === 'projected' ? 'Projected Revenue' : 'Revenue'}
+                      <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300 flex items-center">
+                            <ArrowUp className="w-4 h-4 mr-2 text-emerald-600 dark:text-emerald-400" />
+                            {selectedDateDetails.type === 'projected' ? 'Projected Revenue' : 'Total Revenue'}
                           </span>
-                          <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                          <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
                             ${selectedDateDetails.revenues.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                           </span>
                         </div>
@@ -393,13 +393,13 @@ export function Layer2Forecaster() {
                     )}
                     
                     {selectedDateDetails.expenses > 0 && (
-                      <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-xs text-slate-600 dark:text-slate-400 flex items-center">
-                            <ArrowDown className="w-3 h-3 mr-1 text-rose-600 dark:text-rose-400" />
-                            {selectedDateDetails.type === 'projected' ? 'Projected Expense' : 'Expense'}
+                      <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-rose-700 dark:text-rose-300 flex items-center">
+                            <ArrowDown className="w-4 h-4 mr-2 text-rose-600 dark:text-rose-400" />
+                            {selectedDateDetails.type === 'projected' ? 'Projected Expense' : 'Total Expense'}
                           </span>
-                          <span className="text-sm font-semibold text-rose-600 dark:text-rose-400">
+                          <span className="text-lg font-bold text-rose-600 dark:text-rose-400">
                             ${selectedDateDetails.expenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                           </span>
                         </div>
@@ -407,29 +407,39 @@ export function Layer2Forecaster() {
                     )}
                     
                     {selectedDateDetails.type === 'historical' && selectedDateDetails.transactions.length > 0 && (
-                      <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
-                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Transactions ({selectedDateDetails.transactions.length})</p>
-                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                      <div className="pt-3 border-t border-slate-200 dark:border-slate-700">
+                        <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
+                          Transactions ({selectedDateDetails.transactions.length})
+                        </p>
+                        <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
                           {selectedDateDetails.transactions.map((t, idx) => (
-                            <div key={idx} className="text-xs p-2 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors">
-                              <div className="flex items-start justify-between gap-2">
-                                <div className="flex-1 min-w-0">
-                                  <p className="font-semibold text-slate-900 dark:text-slate-100 mb-1 break-words">
+                            <div 
+                              key={idx} 
+                              className="p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-sm transition-all"
+                            >
+                              <div className="space-y-2">
+                                {/* Transaction Description */}
+                                <div>
+                                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 leading-snug break-words">
                                     {t.description}
                                   </p>
-                                  <div className="flex items-center justify-between mt-1">
-                                    <span className="text-slate-500 dark:text-slate-400 capitalize">
+                                </div>
+                                
+                                {/* Category and Amount Row */}
+                                <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-700">
+                                  <div className="flex items-center space-x-2">
+                                    <span className="text-xs px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 capitalize font-medium">
                                       {t.category.replace(/_/g, ' ')}
                                     </span>
-                                    <span className={`font-bold text-sm ml-2 ${t.amount < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                                      {t.amount < 0 ? '-' : '+'}${Math.abs(t.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                    </span>
+                                    {t.original_category && t.original_category !== t.category && (
+                                      <span className="text-xs text-slate-400 dark:text-slate-500 italic">
+                                        (was {t.original_category.replace(/_/g, ' ')})
+                                      </span>
+                                    )}
                                   </div>
-                                  {t.original_category && t.original_category !== t.category && (
-                                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 italic">
-                                      Originally: {t.original_category}
-                                    </p>
-                                  )}
+                                  <span className={`text-base font-bold ${t.amount < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                    {t.amount < 0 ? '-' : '+'}${Math.abs(t.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                  </span>
                                 </div>
                               </div>
                             </div>
