@@ -10,7 +10,7 @@ export function BalanceSheetUploader() {
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const { balanceSheetData, setBalanceSheetData, saveToFirebase, isSaving } = useBudget();
+    const { balanceSheetData, setBalanceSheetData, saveBalanceSheetToFirebase, isSaving } = useBudget();
 
     const handleFileSelect = async (file: File) => {
         // Validate file type
@@ -33,9 +33,9 @@ export function BalanceSheetUploader() {
 
             if (response.success) {
                 setBalanceSheetData(response);
-                // Auto-save to Firebase
+                // Auto-save to Firebase - pass response data directly
                 try {
-                    await saveToFirebase(file.name, 'balanceSheet');
+                    await saveBalanceSheetToFirebase(file.name, response);
                 } catch (saveError) {
                     console.error('Failed to save to Firebase:', saveError);
                 }
