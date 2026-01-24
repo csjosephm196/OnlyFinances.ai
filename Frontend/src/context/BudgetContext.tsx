@@ -77,7 +77,8 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
         setIncomeStatementData(null);
     };
 
-    // Auto-load history and restore most recent data when user logs in
+    // Auto-load history lists and restore latest transactions for Dashboard on login
+    // Note: Balance sheets and income statements are NOT auto-restored (Fiscal Core starts fresh)
     useEffect(() => {
         if (!user) {
             // Clear data when user logs out
@@ -88,11 +89,11 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        const loadAndRestoreData = async () => {
+        const loadHistoryAndRestoreTransactions = async () => {
             setIsLoadingHistory(true);
-            console.log('🔄 Loading historical data for user:', user.uid);
+            console.log('🔄 Loading history for user:', user.uid);
             try {
-                // Load history lists
+                // Load all history lists
                 const [budgets, balanceSheets, incomeStatements] = await Promise.all([
                     getBudgetHistory(user.uid, 20),
                     getBalanceSheets(user.uid, 20),
@@ -103,10 +104,11 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
                 setIncomeStatementHistoryList(incomeStatements);
                 console.log(`📊 Loaded: ${budgets.length} budgets, ${balanceSheets.length} balance sheets, ${incomeStatements.length} income statements`);
 
-                // Always restore most recent budget with transactions if available
+                // Auto-restore ONLY the latest transactions for the Dashboard
+                // (Balance sheets and income statements stay fresh for Fiscal Core)
                 if (budgets.length > 0) {
                     const latestBudget = budgets[0];
-                    console.log('💰 Restoring most recent budget:', latestBudget.fileName);
+                    console.log('💰 Restoring latest transactions for Dashboard:', latestBudget.fileName);
                     const transactions = await getBudgetTransactions(latestBudget.id);
                     console.log(`   Fetched ${transactions.length} transactions`);
                     setProcessingResult({
@@ -119,68 +121,15 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
                     });
                 }
 
-                // Always restore most recent balance sheet with items if available
-                if (balanceSheets.length > 0) {
-                    const latestBS = balanceSheets[0];
-                    console.log('📋 Restoring most recent balance sheet:', latestBS.fileName);
-                    const items = await getBalanceSheetItems(latestBS.id);
-                    const assetItems = items.filter(item => item.type === 'asset');
-                    const liabilityItems = items.filter(item => item.type === 'liability');
-                    setBalanceSheetData({
-                        success: true,
-                        date: latestBS.date,
-                        total_items: latestBS.totalItems,
-                        equity: latestBS.equity,
-                        assets: {
-                            items: assetItems,
-                            total: latestBS.assets.total,
-                            by_category: latestBS.assets.byCategory,
-                        },
-                        liabilities: {
-                            items: liabilityItems,
-                            total: latestBS.liabilities.total,
-                            by_category: latestBS.liabilities.byCategory,
-                        },
-                        items,
-                    });
-                }
-
-                // Always restore most recent income statement with items if available
-                if (incomeStatements.length > 0) {
-                    const latestIS = incomeStatements[0];
-                    console.log('📈 Restoring most recent income statement:', latestIS.fileName);
-                    const items = await getIncomeStatementItems(latestIS.id);
-                    const revenueItems = items.filter(item => item.type === 'revenue');
-                    const expenseItems = items.filter(item => item.type === 'expense');
-                    setIncomeStatementData({
-                        success: true,
-                        period: latestIS.period,
-                        total_items: latestIS.totalItems,
-                        gross_profit: latestIS.grossProfit,
-                        net_income: latestIS.netIncome,
-                        revenues: {
-                            items: revenueItems,
-                            total: latestIS.revenues.total,
-                            by_category: latestIS.revenues.byCategory,
-                        },
-                        expenses: {
-                            items: expenseItems,
-                            total: latestIS.expenses.total,
-                            by_category: latestIS.expenses.byCategory,
-                        },
-                        items,
-                    });
-                }
-
-                console.log('✅ Data restoration complete');
+                console.log('✅ History loaded, transactions restored for Dashboard');
             } catch (err) {
-                console.error('Failed to load/restore historical data:', err);
+                console.error('Failed to load history:', err);
             } finally {
                 setIsLoadingHistory(false);
             }
         };
 
-        loadAndRestoreData();
+        loadHistoryAndRestoreTransactions();
     }, [user]); // Run when user changes (login/logout)
 
     // Save budget data to Firebase - accepts data directly

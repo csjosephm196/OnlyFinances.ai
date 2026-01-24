@@ -3,6 +3,7 @@ import { FileText, Layers, BarChart3 } from 'lucide-react';
 import { Layer1Classifier } from './Layer1Classifier';
 import { BalanceSheetUploader } from './BalanceSheetUploader';
 import { IncomeStatementUploader } from './IncomeStatementUploader';
+import { UploadHistoryDropdown } from './UploadHistoryDropdown';
 
 type FiscalTab = 'transactions' | 'balancesheet' | 'incomestatement';
 
@@ -65,6 +66,11 @@ export function FiscalCore({ onNavigate }: FiscalCoreProps = {}) {
         }
     };
 
+    // Handler for when user selects a historical upload from dropdown
+    const handleHistorySelect = (type: FiscalTab) => {
+        setActiveTab(type);
+    };
+
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header with Tabs */}
@@ -76,29 +82,35 @@ export function FiscalCore({ onNavigate }: FiscalCoreProps = {}) {
                     </p>
                 </div>
 
-                {/* Tab Buttons */}
-                <div className="flex items-center space-x-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-                    {TABS.map((tab) => {
-                        const Icon = tab.icon;
-                        const isActive = activeTab === tab.id;
+                {/* Tab Buttons and History Dropdown */}
+                <div className="flex items-center gap-2">
+                    {/* History Dropdown */}
+                    <UploadHistoryDropdown onSelect={handleHistorySelect} />
 
-                        return (
-                            <button
-                                key={tab.id}
-                                onClick={() => setActiveTab(tab.id)}
-                                className={`
+                    {/* Tab Buttons */}
+                    <div className="flex items-center space-x-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                        {TABS.map((tab) => {
+                            const Icon = tab.icon;
+                            const isActive = activeTab === tab.id;
+
+                            return (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setActiveTab(tab.id)}
+                                    className={`
                   flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all duration-200
                   ${isActive
-                                        ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
-                                        : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'
-                                    }
+                                            ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                                            : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+                                        }
                 `}
-                            >
-                                <Icon className={`w-4 h-4 mr-1.5 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : ''}`} />
-                                <span className="hidden md:inline">{tab.label}</span>
-                            </button>
-                        );
-                    })}
+                                >
+                                    <Icon className={`w-4 h-4 mr-1.5 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : ''}`} />
+                                    <span className="hidden md:inline">{tab.label}</span>
+                                </button>
+                            );
+                        })}
+                    </div>
                 </div>
             </div>
 
