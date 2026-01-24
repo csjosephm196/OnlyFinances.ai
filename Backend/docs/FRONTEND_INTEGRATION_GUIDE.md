@@ -56,7 +56,7 @@ http://localhost:8000
 
 ### Production (Render)
 ```
-https://budget-ai-api.onrender.com
+'https://demo-backend-bqyy.onrender.com
 ```
 
 ### Endpoints
