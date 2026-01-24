@@ -6,7 +6,11 @@ import { ProcessingResult, SpendingCategory } from '../types/budget';
 import { CATEGORY_DISPLAY, getErrorMessage } from '../constants/categories';
 import { useBudget } from '../context/BudgetContext';
 
-export function Layer1Classifier() {
+interface Layer1ClassifierProps {
+  onNavigate?: (layer: string) => void;
+}
+
+export function Layer1Classifier({ onNavigate }: Layer1ClassifierProps = {}) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -214,11 +218,18 @@ export function Layer1Classifier() {
           </div>
           <div className="p-4 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              Total Spending: <span className="font-semibold text-slate-900 dark:text-slate-100">
-                ${Object.values(processingResult.summary).reduce((sum, val) => sum + Math.abs(val), 0).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+              Transactions Processed: <span className="font-semibold text-slate-900 dark:text-slate-100">
+                {processingResult.total_transactions} transactions
+              </span>
+              <span className="mx-2 text-slate-300 dark:text-slate-600">•</span>
+              <span className="text-slate-500 dark:text-slate-400">
+                Avg Confidence: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{avgConfidence}%</span>
               </span>
             </p>
-            <button className="flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200">
+            <button 
+              onClick={() => onNavigate?.('dashboard')}
+              className="flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
+            >
               View Dashboard <ArrowRight className="w-4 h-4 ml-2" />
             </button>
           </div>

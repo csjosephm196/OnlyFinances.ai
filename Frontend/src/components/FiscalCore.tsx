@@ -12,13 +12,17 @@ interface TabConfig {
     icon: React.ElementType;
 }
 
+interface FiscalCoreProps {
+    onNavigate?: (layer: string) => void;
+}
+
 const TABS: TabConfig[] = [
     { id: 'transactions', label: 'Transactions', icon: FileText },
     { id: 'balancesheet', label: 'Balance Sheet', icon: Layers },
     { id: 'incomestatement', label: 'Income Statement', icon: BarChart3 },
 ];
 
-export function FiscalCore() {
+export function FiscalCore({ onNavigate }: FiscalCoreProps = {}) {
     const [activeTab, setActiveTab] = useState<FiscalTab>('transactions');
 
     const getTabContent = () => {
@@ -51,13 +55,13 @@ export function FiscalCore() {
     const renderContent = () => {
         switch (activeTab) {
             case 'transactions':
-                return <Layer1Classifier />;
+                return <Layer1Classifier onNavigate={onNavigate} />;
             case 'balancesheet':
                 return <BalanceSheetUploader />;
             case 'incomestatement':
                 return <IncomeStatementUploader />;
             default:
-                return <Layer1Classifier />;
+                return <Layer1Classifier onNavigate={onNavigate} />;
         }
     };
 

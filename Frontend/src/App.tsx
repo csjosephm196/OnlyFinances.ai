@@ -135,7 +135,7 @@ function DashboardOverview({ onNavigate, highlightedElement }: { onNavigate?: (l
         {/* Spending by Category Pie Chart */}
         <div 
           id="chart-pie"
-          className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'chart-pie' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}`}
+          className={`bg-gradient-to-br from-slate-50 to-indigo-50/30 dark:from-slate-800 dark:to-indigo-950/20 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'chart-pie' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}`}
         >
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-semibold text-slate-900 dark:text-slate-100">Spending by Category</h3>
@@ -146,7 +146,7 @@ function DashboardOverview({ onNavigate, highlightedElement }: { onNavigate?: (l
         {/* Monthly Trends Chart */}
         <div 
           id="chart-monthly-trends"
-          className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'chart-monthly-trends' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}`}
+          className={`bg-gradient-to-br from-slate-50 to-purple-50/30 dark:from-slate-800 dark:to-purple-950/20 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'chart-monthly-trends' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}`}
         >
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-semibold text-slate-900 dark:text-slate-100">Monthly Spending Trends</h3>
@@ -300,7 +300,7 @@ function AppContent() {
   const renderLayer = () => {
     switch (activeLayer) {
       case 'dashboard': return <DashboardOverview onNavigate={handleSetActiveLayer} highlightedElement={highlightedElement} />;
-      case 'fiscalcore': return <FiscalCore />;
+      case 'fiscalcore': return <FiscalCore onNavigate={handleSetActiveLayer} />;
       case 'layer2': return <Layer2Forecaster />;
       case 'layer3': return <Layer3Advisor />;
       case 'assets': return <AssetValuator />;

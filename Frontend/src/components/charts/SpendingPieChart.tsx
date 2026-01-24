@@ -49,7 +49,7 @@ export function SpendingPieChart({ summary }: SpendingPieChartProps) {
 
     if (chartData.length === 0) {
         return (
-            <div className="h-64 flex items-center justify-center bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-dashed border-slate-200 dark:border-slate-700">
+            <div className="h-64 flex items-center justify-center bg-transparent rounded-lg border border-dashed border-slate-300 dark:border-slate-600">
                 <span className="text-slate-400 dark:text-slate-500 text-sm font-medium">No spending data available</span>
             </div>
         );

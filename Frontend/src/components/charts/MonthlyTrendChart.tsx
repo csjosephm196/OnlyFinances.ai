@@ -88,8 +88,8 @@ export function MonthlyTrendChart({ monthlyBreakdown }: MonthlyTrendChartProps) 
 
     if (chartData.length === 0) {
         return (
-            <div className="h-64 flex items-center justify-center bg-slate-50 rounded-lg border border-dashed border-slate-200">
-                <span className="text-slate-400 text-sm font-medium">No monthly data available</span>
+            <div className="h-64 flex items-center justify-center bg-transparent rounded-lg border border-dashed border-slate-300 dark:border-slate-600">
+                <span className="text-slate-400 dark:text-slate-500 text-sm font-medium">No monthly data available</span>
             </div>
         );
     }
