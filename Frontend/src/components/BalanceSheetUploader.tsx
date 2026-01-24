@@ -70,13 +70,6 @@ export function BalanceSheetUploader() {
 
     return (
         <div className="max-w-5xl mx-auto space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-            <div className="flex justify-between items-end">
-                <div>
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Balance Sheet</h2>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">Upload your balance sheet CSV to analyze assets and liabilities using AI.</p>
-                </div>
-            </div>
-
             <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl p-8">
                 <input
                     ref={fileInputRef}
@@ -172,19 +165,19 @@ export function BalanceSheetUploader() {
 
                     {/* Items Table */}
                     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl overflow-hidden">
-                        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
+                        <div className="px-6 py-4 border-b-2 border-emerald-100 dark:border-emerald-900/50 flex justify-between items-center bg-gradient-to-r from-slate-50 to-emerald-50/30 dark:from-slate-900 dark:to-emerald-950/30">
                             <div className="flex items-center space-x-2">
                                 <div className="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400 p-1 rounded-full">
                                     <CheckCircle2 className="w-4 h-4" />
                                 </div>
-                                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
                                     {balanceSheetData.total_items} Items Found
                                 </h3>
                                 <span className="text-sm text-slate-500 dark:text-slate-400">
                                     (as of {balanceSheetData.date})
                                 </span>
                             </div>
-                            <div className="flex items-center space-x-2 text-xs font-medium bg-white dark:bg-slate-700 px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-600 shadow-sm text-slate-600 dark:text-slate-300">
+                            <div className="flex items-center space-x-2 text-xs font-medium bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
                                 <span className="w-2 h-2 bg-emerald-500 dark:bg-emerald-400 rounded-full" />
                                 <span>{avgConfidence}% Avg Confidence</span>
                             </div>
@@ -192,7 +185,7 @@ export function BalanceSheetUploader() {
 
                         <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
                             <table className="w-full text-left text-sm">
-                                <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-100 dark:border-slate-700 sticky top-0">
+                                <thead className="bg-slate-100 dark:bg-slate-800/70 text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wide border-b border-slate-200 dark:border-slate-700 sticky top-0">
                                     <tr>
                                         <th className="px-6 py-3">Name</th>
                                         <th className="px-6 py-3">Type</th>
@@ -201,9 +194,9 @@ export function BalanceSheetUploader() {
                                         <th className="px-6 py-3 w-24 text-center">Confidence</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 bg-white dark:bg-slate-800">
                                     {balanceSheetData.items.map((item, i) => (
-                                        <tr key={i} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/50 transition-colors group">
+                                        <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group">
                                             <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100 max-w-xs truncate">
                                                 {item.name}
                                             </td>
@@ -229,7 +222,7 @@ export function BalanceSheetUploader() {
                                 </tbody>
                             </table>
                         </div>
-                        <div className="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                        <div className="p-4 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
                             <p className="text-sm text-slate-500 dark:text-slate-400">
                                 Net Worth: <span className="font-semibold text-slate-900 dark:text-slate-100">
                                     ${balanceSheetData.equity.toLocaleString('en-US', { minimumFractionDigits: 2 })}

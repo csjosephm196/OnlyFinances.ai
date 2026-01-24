@@ -70,13 +70,6 @@ export function IncomeStatementUploader() {
 
     return (
         <div className="max-w-5xl mx-auto space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-            <div className="flex justify-between items-end">
-                <div>
-                    <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Income Statement</h2>
-                    <p className="text-slate-500 dark:text-slate-400 mt-1">Upload your income statement CSV to analyze revenue and expenses using AI.</p>
-                </div>
-            </div>
-
             <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl p-8">
                 <input
                     ref={fileInputRef}
@@ -179,19 +172,19 @@ export function IncomeStatementUploader() {
 
                     {/* Items Table */}
                     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl overflow-hidden">
-                        <div className="px-6 py-4 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center bg-slate-50/50 dark:bg-slate-900/50">
+                        <div className="px-6 py-4 border-b-2 border-purple-100 dark:border-purple-900/50 flex justify-between items-center bg-gradient-to-r from-slate-50 to-purple-50/30 dark:from-slate-900 dark:to-purple-950/30">
                             <div className="flex items-center space-x-2">
                                 <div className="bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-400 p-1 rounded-full">
                                     <CheckCircle2 className="w-4 h-4" />
                                 </div>
-                                <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                                <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
                                     {incomeStatementData.total_items} Items Found
                                 </h3>
                                 <span className="text-sm text-slate-500 dark:text-slate-400">
                                     ({incomeStatementData.period.start} to {incomeStatementData.period.end})
                                 </span>
                             </div>
-                            <div className="flex items-center space-x-2 text-xs font-medium bg-white dark:bg-slate-700 px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-600 shadow-sm text-slate-600 dark:text-slate-300">
+                            <div className="flex items-center space-x-2 text-xs font-medium bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
                                 <span className="w-2 h-2 bg-purple-500 dark:bg-purple-400 rounded-full" />
                                 <span>{avgConfidence}% Avg Confidence</span>
                             </div>
@@ -199,7 +192,7 @@ export function IncomeStatementUploader() {
 
                         <div className="overflow-x-auto max-h-[500px] overflow-y-auto">
                             <table className="w-full text-left text-sm">
-                                <thead className="bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 font-medium border-b border-slate-100 dark:border-slate-700 sticky top-0">
+                                <thead className="bg-slate-100 dark:bg-slate-800/70 text-slate-600 dark:text-slate-400 font-semibold text-xs uppercase tracking-wide border-b border-slate-200 dark:border-slate-700 sticky top-0">
                                     <tr>
                                         <th className="px-6 py-3">Description</th>
                                         <th className="px-6 py-3">Type</th>
@@ -208,9 +201,9 @@ export function IncomeStatementUploader() {
                                         <th className="px-6 py-3 w-24 text-center">Confidence</th>
                                     </tr>
                                 </thead>
-                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
+                                <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50 bg-white dark:bg-slate-800">
                                     {incomeStatementData.items.map((item, i) => (
-                                        <tr key={i} className="hover:bg-slate-50/80 dark:hover:bg-slate-700/50 transition-colors group">
+                                        <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors group">
                                             <td className="px-6 py-4 font-medium text-slate-900 dark:text-slate-100 max-w-xs truncate">
                                                 {item.description}
                                             </td>
@@ -236,7 +229,7 @@ export function IncomeStatementUploader() {
                                 </tbody>
                             </table>
                         </div>
-                        <div className="p-4 bg-slate-50 dark:bg-slate-900 border-t border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                        <div className="p-4 bg-slate-50/50 dark:bg-slate-900/50 border-t border-slate-200 dark:border-slate-700 flex justify-between items-center">
                             <p className="text-sm text-slate-500 dark:text-slate-400">
                                 Net Income: <span className={`font-semibold ${incomeStatementData.net_income >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
                                     {incomeStatementData.net_income >= 0 ? '+' : ''}${incomeStatementData.net_income.toLocaleString('en-US', { minimumFractionDigits: 2 })}
