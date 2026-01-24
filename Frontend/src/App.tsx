@@ -160,34 +160,33 @@ function DashboardOverview({ onNavigate, highlightedElement }: { onNavigate?: (l
         id="spending-breakdown"
         className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'spending-breakdown' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}`}
       >
-        <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">Spending Breakdown</h3>
-        <div className="space-y-4">
+        <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100 mb-6">Spending Breakdown</h3>
+        <div className="space-y-5">
           {Object.entries(processingResult.summary)
             .filter(([_, amount]) => amount !== 0)
             .sort((a, b) => Math.abs(b[1]) - Math.abs(a[1]))
-            .slice(0, 6)
             .map(([category, amount]) => {
               const display = CATEGORY_DISPLAY[category as SpendingCategory];
               const percentage = (Math.abs(amount) / totalSpent) * 100;
               return (
-                <div key={category} className="flex items-center">
-                  <span className="text-2xl mr-3">{display?.icon}</span>
-                  <div className="flex-1">
-                    <div className="flex justify-between mb-1">
-                      <span className="font-medium text-slate-900 dark:text-slate-100">{display?.label || category}</span>
-                      <span className="font-semibold text-slate-900 dark:text-slate-100">
+                <div key={category} className="flex items-center p-3 rounded-lg bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-900 transition-colors border border-slate-200 dark:border-slate-700">
+                  <span className="text-3xl mr-4 flex-shrink-0">{display?.icon}</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-center mb-2">
+                      <span className="font-semibold text-base text-slate-900 dark:text-slate-100">{display?.label || category}</span>
+                      <span className="font-bold text-lg text-slate-900 dark:text-slate-100 ml-4">
                         ${Math.abs(amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
-                    <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2">
+                    <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-3 shadow-inner">
                       <div
-                        className="h-2 rounded-full transition-all duration-500"
+                        className="h-3 rounded-full transition-all duration-500 shadow-sm"
                         style={{ width: `${percentage}%`, backgroundColor: display?.color }}
                       />
                     </div>
                   </div>
-                  <span className="ml-4 text-sm text-slate-500 dark:text-slate-400 w-12 text-right">
-                    {percentage.toFixed(0)}%
+                  <span className="ml-4 text-base font-semibold text-slate-600 dark:text-slate-300 w-14 text-right flex-shrink-0">
+                    {percentage.toFixed(1)}%
                   </span>
                 </div>
               );
