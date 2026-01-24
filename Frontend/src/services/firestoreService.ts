@@ -108,17 +108,20 @@ export async function getConversations(
     maxCount: number = 50
 ): Promise<ConversationWithId[]> {
     const conversationsRef = collection(db, 'conversations');
+    // Note: Removed orderBy to avoid requiring composite index
+    // Sorting is done client-side instead
     const q = query(
         conversationsRef,
         where('userId', '==', userId),
-        orderBy('updatedAt', 'desc'),
         limit(maxCount)
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
+    const conversations = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
     })) as ConversationWithId[];
+    // Sort by updatedAt descending client-side
+    return conversations.sort((a, b) => b.updatedAt.toMillis() - a.updatedAt.toMillis());
 }
 
 export async function updateConversation(
@@ -244,17 +247,19 @@ export async function getBudgetHistory(
     maxCount: number = 20
 ): Promise<BudgetHistoryWithId[]> {
     const budgetRef = collection(db, 'budgetHistory');
+    // Note: Removed orderBy to avoid requiring composite index
     const q = query(
         budgetRef,
         where('userId', '==', userId),
-        orderBy('uploadedAt', 'desc'),
         limit(maxCount)
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
+    const budgets = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
     })) as BudgetHistoryWithId[];
+    // Sort by uploadedAt descending client-side
+    return budgets.sort((a, b) => b.uploadedAt.toMillis() - a.uploadedAt.toMillis());
 }
 
 export async function getBudgetTransactions(
@@ -348,17 +353,19 @@ export async function getBalanceSheets(
     maxCount: number = 20
 ): Promise<BalanceSheetWithId[]> {
     const balanceRef = collection(db, 'balanceSheets');
+    // Note: Removed orderBy to avoid requiring composite index
     const q = query(
         balanceRef,
         where('userId', '==', userId),
-        orderBy('uploadedAt', 'desc'),
         limit(maxCount)
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
+    const balanceSheets = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
     })) as BalanceSheetWithId[];
+    // Sort by uploadedAt descending client-side
+    return balanceSheets.sort((a, b) => b.uploadedAt.toMillis() - a.uploadedAt.toMillis());
 }
 
 export async function getBalanceSheetItems(
@@ -450,17 +457,19 @@ export async function getIncomeStatements(
     maxCount: number = 20
 ): Promise<IncomeStatementWithId[]> {
     const incomeRef = collection(db, 'incomeStatements');
+    // Note: Removed orderBy to avoid requiring composite index
     const q = query(
         incomeRef,
         where('userId', '==', userId),
-        orderBy('uploadedAt', 'desc'),
         limit(maxCount)
     );
     const snapshot = await getDocs(q);
-    return snapshot.docs.map((doc) => ({
+    const statements = snapshot.docs.map((doc) => ({
         id: doc.id,
         ...doc.data(),
     })) as IncomeStatementWithId[];
+    // Sort by uploadedAt descending client-side
+    return statements.sort((a, b) => b.uploadedAt.toMillis() - a.uploadedAt.toMillis());
 }
 
 export async function getIncomeStatementItems(
