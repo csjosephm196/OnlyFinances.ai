@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { LayoutDashboard, FileText, TrendingUp, MessageSquare, PieChart, Menu, Bell, Search, Command, LogOut, Sparkles, Layers, BarChart3, ArrowRight } from 'lucide-react';
+import { LayoutDashboard, FileText, TrendingUp, MessageSquare, PieChart, Menu, Bell, Search, Command, LogOut, Sparkles, Layers, BarChart3, ArrowRight, User, Settings, X, Mail, Lock, Calendar, Edit2, Camera } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ThemeToggle } from './ThemeToggle';
 import { SearchResults } from './SearchResults';
@@ -14,6 +14,7 @@ interface LayoutProps {
 
 export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const { signOut, user } = useAuth();
   const { searchQuery, setSearchQuery, searchResults, isSearchOpen, setIsSearchOpen } = useSearch();
   const searchRef = useRef<HTMLDivElement>(null);
@@ -237,7 +238,10 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
         </nav>
 
         <div className={`p-4 border-t border-slate-100 dark:border-slate-700 ${!sidebarOpen && 'flex justify-center'}`}>
-          <button className="flex items-center w-full group">
+          <button 
+            onClick={() => setProfileModalOpen(true)}
+            className="flex items-center w-full group hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg p-2 -m-2 transition-colors"
+          >
             <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
               {user?.displayName ? user.displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : user?.email ? user.email.slice(0, 2).toUpperCase() : 'U'}
             </div>
@@ -252,6 +256,141 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
           </button>
         </div>
       </motion.div>
+
+      {/* Profile Modal */}
+      {profileModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setProfileModalOpen(false)}>
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-xl w-full"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="relative h-28 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-500 dark:via-purple-500 dark:to-pink-500 animate-gradient bg-[length:200%_200%] rounded-t-2xl">
+              <button
+                onClick={() => setProfileModalOpen(false)}
+                className="absolute top-3 right-3 p-1.5 text-white/80 hover:text-white hover:bg-white/20 rounded-lg transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+              <div className="absolute bottom-0 left-6 transform translate-y-1/2">
+                <div className="relative group">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-xl ring-4 ring-white dark:ring-slate-800">
+                    {user?.displayName ? user.displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : user?.email ? user.email.slice(0, 2).toUpperCase() : 'U'}
+                  </div>
+                  <button className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera className="w-6 h-6 text-white" />
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="pt-12 px-6 pb-5">
+              {/* Profile Header */}
+              <div className="mb-4">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                  {user?.displayName || (user?.email ? user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1) : 'User')}
+                </h2>
+                <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                  Member since {user?.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'recently'}
+                </p>
+              </div>
+
+              {/* Account Information */}
+              <div className="space-y-2 mb-4">
+                {/* Display Name */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors group">
+                  <div className="flex items-center gap-2.5 flex-1">
+                    <User className="w-4 h-4 text-slate-400" />
+                    <div className="flex-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Display Name</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        {user?.displayName || 'Not set'}
+                      </p>
+                    </div>
+                  </div>
+                  <button className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all">
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Email Row */}
+                <div className="grid grid-cols-2 gap-2">
+                  {/* Primary Email */}
+                  <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors group">
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                      <Mail className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Primary Email</p>
+                        <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">
+                          {user?.email || 'No email'}
+                        </p>
+                      </div>
+                    </div>
+                    <button className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all flex-shrink-0">
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+
+                  {/* Secondary Email */}
+                  <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors group">
+                    <div className="flex items-center gap-2.5 flex-1 min-w-0">
+                      <Mail className="w-4 h-4 text-slate-400 flex-shrink-0" />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-xs text-slate-500 dark:text-slate-400">Secondary</p>
+                        <p className="text-sm font-medium text-slate-500 dark:text-slate-400 italic truncate">
+                          Not set
+                        </p>
+                      </div>
+                    </div>
+                    <button className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all flex-shrink-0">
+                      <Edit2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Password */}
+                <div className="flex items-center justify-between p-3 bg-slate-50 dark:bg-slate-700/50 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors group">
+                  <div className="flex items-center gap-2.5 flex-1">
+                    <Lock className="w-4 h-4 text-slate-400" />
+                    <div className="flex-1">
+                      <p className="text-xs text-slate-500 dark:text-slate-400">Password</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        ••••••••
+                      </p>
+                    </div>
+                  </div>
+                  <button className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all">
+                    <Edit2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-700 space-y-2">
+                <button
+                  onClick={() => setProfileModalOpen(false)}
+                  className="w-full px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 text-slate-900 dark:text-slate-100 font-medium rounded-lg transition-colors text-sm"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setProfileModalOpen(false);
+                  }}
+                  className="w-full px-4 py-2 bg-rose-50 dark:bg-rose-900/20 hover:bg-rose-100 dark:hover:bg-rose-900/30 text-rose-600 dark:text-rose-400 font-medium rounded-lg transition-colors flex items-center justify-center gap-2 text-sm"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign Out
+                </button>
+              </div>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50/50 dark:bg-slate-900/50">
