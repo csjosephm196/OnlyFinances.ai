@@ -126,35 +126,49 @@ export function Layer2Forecaster() {
       projected: [],
     };
     
+    // Helper to create a date at midnight local time (to match calendar behavior)
+    const createDateAtMidnight = (dateStr: string): Date => {
+      const [year, month, day] = dateStr.split('-').map(Number);
+      return new Date(year, month - 1, day);
+    };
+    
     // Track dates that have been categorized to avoid duplicates
     const categorizedDates = new Set<string>();
     
     dailyTotals.forEach(({ expenses, revenues }, dateKey) => {
-      const date = new Date(dateKey);
-      const dateStr = dateKey;
-      
       // Skip if already categorized
-      if (categorizedDates.has(dateStr)) return;
+      if (categorizedDates.has(dateKey)) return;
+      
+      // Create date at midnight local time
+      const date = createDateAtMidnight(dateKey);
       
       // Categorize: check for BOTH first, then individual
-      if (expenses > 0 && revenues > 0) {
+      // Use threshold to avoid floating point issues (0.01 = 1 cent)
+      const EXPENSE_THRESHOLD = 0.01;
+      const REVENUE_THRESHOLD = 0.01;
+      
+      const hasExpenses = expenses >= EXPENSE_THRESHOLD;
+      const hasRevenues = revenues >= REVENUE_THRESHOLD;
+      
+      if (hasExpenses && hasRevenues) {
+        // Has BOTH expenses and revenues
         mods.hasBoth.push(date);
-        categorizedDates.add(dateStr);
-      } else if (expenses > 0 && revenues === 0) {
-        // ONLY expenses, no revenues
+        categorizedDates.add(dateKey);
+      } else if (hasExpenses) {
+        // ONLY expenses (revenues are below threshold or zero)
         mods.hasExpenses.push(date);
-        categorizedDates.add(dateStr);
-      } else if (revenues > 0 && expenses === 0) {
-        // ONLY revenues, no expenses
+        categorizedDates.add(dateKey);
+      } else if (hasRevenues) {
+        // ONLY revenues (expenses are below threshold or zero)
         mods.hasRevenues.push(date);
-        categorizedDates.add(dateStr);
+        categorizedDates.add(dateKey);
       }
     });
     
     futureProjections.forEach((_, dateKey) => {
-      const date = new Date(dateKey);
       // Only add if not already in historical data
       if (!categorizedDates.has(dateKey)) {
+        const date = createDateAtMidnight(dateKey);
         mods.projected.push(date);
       }
     });
@@ -308,10 +322,13 @@ export function Layer2Forecaster() {
                 className="rounded-lg border border-slate-200 dark:border-slate-700"
                 modifiers={modifiers}
                 modifiersClassNames={{
-                  hasExpenses: "bg-rose-100 dark:bg-rose-900/30 text-rose-900 dark:text-rose-100 font-medium",
-                  hasRevenues: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-900 dark:text-emerald-100 font-medium",
-                  hasBoth: "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-900 dark:text-indigo-100 font-semibold ring-2 ring-indigo-400 dark:ring-indigo-600",
+                  hasExpenses: "!bg-rose-100 dark:!bg-rose-900/30 !text-rose-900 dark:!text-rose-100 font-medium",
+                  hasRevenues: "!bg-emerald-100 dark:!bg-emerald-900/30 !text-emerald-900 dark:!text-emerald-100 font-medium",
+                  hasBoth: "!bg-indigo-100 dark:!bg-indigo-900/30 !text-indigo-900 dark:!text-indigo-100 font-semibold ring-2 ring-indigo-400 dark:ring-indigo-600",
                   projected: "border-2 border-dashed border-slate-300 dark:border-slate-600",
+                }}
+                classNames={{
+                  day: "relative",
                 }}
                 disabled={(date) => {
                   // Disable dates outside the range (past start date - 30 days to end date + 90 days)
