@@ -71,13 +71,6 @@ export function Layer1Classifier() {
 
   return (
     <div className="max-w-5xl mx-auto space-y-8 animate-in slide-in-from-bottom-4 duration-500">
-      <div className="flex justify-between items-end">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Transaction Classifier</h2>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">Upload your bank statements to automatically categorize expenses using AI.</p>
-        </div>
-      </div>
-
       <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl p-8">
         <input
           ref={fileInputRef}
