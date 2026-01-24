@@ -246,7 +246,7 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
                 <p className="text-sm font-medium text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
                   {user?.displayName || (user?.email ? user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1) : 'User')}
                 </p>
-                <p className="text-xs text-slate-500 dark:text-slate-400">Pro Plan</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{user?.email || 'No email'}</p>
               </div>
             )}
           </button>
