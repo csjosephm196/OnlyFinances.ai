@@ -15,6 +15,18 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { signOut } = useAuth();
 
+  // Get today's date in Eastern Time (Ontario)
+  const getTodayDate = () => {
+    const now = new Date();
+    return now.toLocaleDateString('en-US', {
+      timeZone: 'America/Toronto',
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'fiscalcore', label: 'Fiscal Core', icon: FileText },
@@ -138,11 +150,7 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
                 </h1>
               </div>
               <div className="flex items-center space-x-1.5 text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
-                <span className="font-medium">Sovereign CFO</span>
-                <span className="text-slate-300 dark:text-slate-600">/</span>
-                <span className="text-slate-400 dark:text-slate-500">
-                  {navItems.find(n => n.id === activeLayer)?.label || 'Dashboard'}
-                </span>
+                <span className="font-medium">{getTodayDate()}</span>
               </div>
             </div>
           </div>
