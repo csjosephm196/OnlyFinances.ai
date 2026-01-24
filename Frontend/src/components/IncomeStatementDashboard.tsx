@@ -12,6 +12,7 @@ interface IncomeStatementDashboardProps {
 
 // Display configuration for revenue categories
 const REVENUE_DISPLAY: Record<RevenueCategory, { icon: string; label: string; color: string }> = {
+    wages_salary: { icon: '💵', label: 'Wages & Salary', color: '#22C55E' },
     sales: { icon: '🛒', label: 'Sales', color: '#10B981' },
     services: { icon: '🔧', label: 'Services', color: '#3B82F6' },
     interest_income: { icon: '🏦', label: 'Interest Income', color: '#8B5CF6' },

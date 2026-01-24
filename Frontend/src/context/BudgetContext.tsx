@@ -170,6 +170,36 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
                     });
                 }
 
+                // Auto-restore the latest balance sheet for the Dashboard
+                if (balanceSheets.length > 0) {
+                    const latestBalanceSheet = balanceSheets[0];
+                    console.log('📊 Restoring latest balance sheet for Dashboard:', latestBalanceSheet.fileName);
+                    const items = await getBalanceSheetItems(latestBalanceSheet.id);
+                    console.log(`   Fetched ${items.length} items`);
+
+                    // Filter items by type for assets and liabilities
+                    const assetItems = items.filter(item => item.type === 'asset');
+                    const liabilityItems = items.filter(item => item.type === 'liability');
+
+                    setBalanceSheetData({
+                        success: true,
+                        date: latestBalanceSheet.date,
+                        total_items: latestBalanceSheet.totalItems,
+                        equity: latestBalanceSheet.equity,
+                        assets: {
+                            items: assetItems,
+                            total: latestBalanceSheet.assets.total,
+                            by_category: latestBalanceSheet.assets.byCategory,
+                        },
+                        liabilities: {
+                            items: liabilityItems,
+                            total: latestBalanceSheet.liabilities.total,
+                            by_category: latestBalanceSheet.liabilities.byCategory,
+                        },
+                        items,
+                    });
+                }
+
                 console.log('✅ History loaded, data restored for Dashboard');
             } catch (err) {
                 console.error('Failed to load history:', err);

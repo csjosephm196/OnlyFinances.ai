@@ -3,6 +3,7 @@
 export type RevenueCategory =
     | 'sales'
     | 'services'
+    | 'wages_salary'
     | 'interest_income'
     | 'investment_income'
     | 'rental_income'

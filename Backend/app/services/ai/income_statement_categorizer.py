@@ -22,20 +22,22 @@ logger = logging.getLogger(__name__)
 # Prompt template for Gemini categorization
 INCOME_STATEMENT_PROMPT = """You are a financial statement analyzer. Analyze each income statement item and classify it as revenue or expense with a specific category.
 
-REVENUE CATEGORIES:
+REVENUE CATEGORIES (use these exact lowercase names):
+- wages_salary: PRIMARY INCOME - salary, wages, paycheck, pay, compensation, primary salary, job income, employment income, W2 income
 - sales: Product sales, merchandise, goods sold, product revenue
-- services: Consulting, professional services, freelance, contract work, service revenue
+- services: Consulting, professional services, freelance, contract work, service revenue, side hustle, gig work, side income
 - interest_income: Bank interest, interest earned, interest received
-- investment_income: Dividends, capital gains, investment returns, ROI
+- investment_income: Dividends, capital gains, investment returns, ROI, stock income
 - rental_income: Property rental, equipment rental, lease income
 - royalties: Licensing fees, intellectual property royalties
-- other_revenue: ONLY use if nothing else fits
+- other_revenue: ONLY use as absolute last resort when nothing else fits
 
-EXPENSE CATEGORIES:
+EXPENSE CATEGORIES (use these exact lowercase names):
+- rent: Rent, lease payments, housing, mortgage, facility costs, coworking, apartment
+- utilities: Electric, gas, water, internet, phone, telecom, hydro, power bill, cell phone
+- travel: Business travel, hotels, flights, meals, entertainment, dining, restaurants, coffee, uber, transport, fuel, gas station
+- salaries_wages: Employee salaries, wages, payroll, compensation, bonus (payments TO employees)
 - cost_of_goods_sold: COGS, direct product costs, materials, manufacturing costs
-- salaries_wages: Employee salaries, wages, payroll, compensation, bonus
-- rent: Office rent, lease payments, facility costs, coworking spaces
-- utilities: Electric, gas, water, internet, phone, telecom
 - marketing: Advertising, promotions, marketing services, ad spend, campaigns
 - insurance: Business insurance, liability, health insurance, workers comp
 - depreciation: Asset depreciation, amortization
@@ -43,19 +45,21 @@ EXPENSE CATEGORIES:
 - taxes: Income tax expense, tax provisions
 - professional_fees: Legal, accounting, consulting fees, attorney, CPA
 - office_supplies: Paper, pens, supplies, stationery, small equipment
-- travel: Business travel, hotels, flights, meals, entertainment
-- other_expenses: ONLY use if nothing else fits
+- other_expenses: Groceries, shopping, subscriptions, gym, education, miscellaneous - use for items that don't fit other categories
 
 CLASSIFICATION RULES:
 1. First determine if the item is Revenue or Expense:
-   - Revenue: Money coming IN to the business (income, sales, earnings)
-   - Expense: Money going OUT of the business (costs, fees, payments)
+   - Revenue: Money coming IN (income, salary, earnings, dividends, sales)
+   - Expense: Money going OUT (costs, fees, payments, purchases, bills)
    
-2. Keywords that indicate REVENUE:
-   - "sales", "revenue", "income", "earned", "received", "royalty"
-   
-3. Keywords that indicate EXPENSE:
-   - "cost", "expense", "fee", "payment", "salary", "rent", "utility"
+2. Common mappings:
+   - "Salary", "Pay", "Wages", "Primary Salary" as INCOME → wages_salary (revenue)
+   - "Side Hustle", "Freelance", "Gig" → services (revenue)
+   - "Dividend", "Investment" → investment_income (revenue)
+   - "Housing", "Rent", "Mortgage" → rent (expense)
+   - "Utilities", "Phone", "Internet", "Hydro" → utilities (expense)
+   - "Dining", "Coffee", "Restaurant", "Transport", "Fuel" → travel (expense)
+   - "Groceries", "Shopping", "Subscriptions", "Gym", "Education" → other_expenses (expense)
 
 For each item, respond with a JSON object containing:
 - "type": either "revenue" or "expense"
@@ -66,7 +70,7 @@ IMPORTANT:
 - Respond ONLY with a JSON array, no other text
 - Each element corresponds to an item in order
 - Use lowercase category names exactly as shown
-- Only use "other_revenue" or "other_expenses" as an absolute last resort
+- Match categories as specifically as possible
 
 Income statement items to classify:
 {items}
@@ -76,19 +80,31 @@ Respond with a JSON array:"""
 
 # Keyword mappings for fallback categorization
 REVENUE_KEYWORDS: dict[str, RevenueCategory] = {
+    # Wages & Salary (employment income - highest priority)
+    "primary salary": RevenueCategory.WAGES_SALARY,
+    "salary": RevenueCategory.WAGES_SALARY,
+    "wage": RevenueCategory.WAGES_SALARY,
+    "paycheck": RevenueCategory.WAGES_SALARY,
+    "pay": RevenueCategory.WAGES_SALARY,
+    "compensation": RevenueCategory.WAGES_SALARY,
+    "employment": RevenueCategory.WAGES_SALARY,
+    "job income": RevenueCategory.WAGES_SALARY,
+    
+    # Services (side income)
+    "side hustle": RevenueCategory.SERVICES,
+    "freelance": RevenueCategory.SERVICES,
+    "gig": RevenueCategory.SERVICES,
+    "service": RevenueCategory.SERVICES,
+    "consulting": RevenueCategory.SERVICES,
+    "professional service": RevenueCategory.SERVICES,
+    "contract": RevenueCategory.SERVICES,
+    
     # Sales
     "sales": RevenueCategory.SALES,
     "revenue": RevenueCategory.SALES,
     "product": RevenueCategory.SALES,
     "merchandise": RevenueCategory.SALES,
     "goods sold": RevenueCategory.SALES,
-    
-    # Services
-    "service": RevenueCategory.SERVICES,
-    "consulting": RevenueCategory.SERVICES,
-    "professional service": RevenueCategory.SERVICES,
-    "freelance": RevenueCategory.SERVICES,
-    "contract": RevenueCategory.SERVICES,
     
     # Interest Income
     "interest income": RevenueCategory.INTEREST_INCOME,
@@ -100,6 +116,7 @@ REVENUE_KEYWORDS: dict[str, RevenueCategory] = {
     "capital gain": RevenueCategory.INVESTMENT_INCOME,
     "investment": RevenueCategory.INVESTMENT_INCOME,
     "return on investment": RevenueCategory.INVESTMENT_INCOME,
+    "stock": RevenueCategory.INVESTMENT_INCOME,
     
     # Rental Income
     "rental": RevenueCategory.RENTAL_INCOME,
@@ -113,6 +130,56 @@ REVENUE_KEYWORDS: dict[str, RevenueCategory] = {
 }
 
 EXPENSE_KEYWORDS: dict[str, ExpenseCategory] = {
+    # Rent & Housing (high priority for personal finance)
+    "housing": ExpenseCategory.RENT,
+    "rent": ExpenseCategory.RENT,
+    "mortgage": ExpenseCategory.RENT,
+    "lease": ExpenseCategory.RENT,
+    "office space": ExpenseCategory.RENT,
+    "facility": ExpenseCategory.RENT,
+    "apartment": ExpenseCategory.RENT,
+    
+    # Utilities (high priority for personal finance)
+    "utility": ExpenseCategory.UTILITIES,
+    "utilities": ExpenseCategory.UTILITIES,
+    "electric": ExpenseCategory.UTILITIES,
+    "hydro": ExpenseCategory.UTILITIES,
+    "power": ExpenseCategory.UTILITIES,
+    "water": ExpenseCategory.UTILITIES,
+    "internet": ExpenseCategory.UTILITIES,
+    "phone": ExpenseCategory.UTILITIES,
+    "telecom": ExpenseCategory.UTILITIES,
+    "cell": ExpenseCategory.UTILITIES,
+    
+    # Travel & Dining (includes personal finance dining/transport)
+    "travel": ExpenseCategory.TRAVEL,
+    "hotel": ExpenseCategory.TRAVEL,
+    "flight": ExpenseCategory.TRAVEL,
+    "airfare": ExpenseCategory.TRAVEL,
+    "dining": ExpenseCategory.TRAVEL,
+    "restaurant": ExpenseCategory.TRAVEL,
+    "coffee": ExpenseCategory.TRAVEL,
+    "food": ExpenseCategory.TRAVEL,
+    "transport": ExpenseCategory.TRAVEL,
+    "fuel": ExpenseCategory.TRAVEL,
+    "uber": ExpenseCategory.TRAVEL,
+    "lyft": ExpenseCategory.TRAVEL,
+    "taxi": ExpenseCategory.TRAVEL,
+    "meal": ExpenseCategory.TRAVEL,
+    "entertainment": ExpenseCategory.TRAVEL,
+    
+    # Other Expenses (groceries, subscriptions, misc)
+    "groceries": ExpenseCategory.OTHER_EXPENSES,
+    "grocery": ExpenseCategory.OTHER_EXPENSES,
+    "shopping": ExpenseCategory.OTHER_EXPENSES,
+    "subscription": ExpenseCategory.OTHER_EXPENSES,
+    "gym": ExpenseCategory.OTHER_EXPENSES,
+    "fitness": ExpenseCategory.OTHER_EXPENSES,
+    "education": ExpenseCategory.OTHER_EXPENSES,
+    "course": ExpenseCategory.OTHER_EXPENSES,
+    "miscellaneous": ExpenseCategory.OTHER_EXPENSES,
+    "misc": ExpenseCategory.OTHER_EXPENSES,
+    
     # Cost of Goods Sold
     "cogs": ExpenseCategory.COST_OF_GOODS_SOLD,
     "cost of goods": ExpenseCategory.COST_OF_GOODS_SOLD,
@@ -120,30 +187,9 @@ EXPENSE_KEYWORDS: dict[str, ExpenseCategory] = {
     "direct cost": ExpenseCategory.COST_OF_GOODS_SOLD,
     "materials": ExpenseCategory.COST_OF_GOODS_SOLD,
     
-    # Salaries & Wages
-    "salary": ExpenseCategory.SALARIES_WAGES,
-    "salaries": ExpenseCategory.SALARIES_WAGES,
-    "wage": ExpenseCategory.SALARIES_WAGES,
-    "wages": ExpenseCategory.SALARIES_WAGES,
+    # Salaries & Wages (expense - paying employees)
     "payroll": ExpenseCategory.SALARIES_WAGES,
-    "compensation": ExpenseCategory.SALARIES_WAGES,
     "employee": ExpenseCategory.SALARIES_WAGES,
-    
-    # Rent
-    "rent": ExpenseCategory.RENT,
-    "lease": ExpenseCategory.RENT,
-    "office space": ExpenseCategory.RENT,
-    "facility": ExpenseCategory.RENT,
-    
-    # Utilities
-    "utility": ExpenseCategory.UTILITIES,
-    "utilities": ExpenseCategory.UTILITIES,
-    "electric": ExpenseCategory.UTILITIES,
-    "gas": ExpenseCategory.UTILITIES,
-    "water": ExpenseCategory.UTILITIES,
-    "internet": ExpenseCategory.UTILITIES,
-    "phone": ExpenseCategory.UTILITIES,
-    "telecom": ExpenseCategory.UTILITIES,
     
     # Marketing
     "marketing": ExpenseCategory.MARKETING,
@@ -176,8 +222,6 @@ EXPENSE_KEYWORDS: dict[str, ExpenseCategory] = {
     # Professional Fees
     "legal": ExpenseCategory.PROFESSIONAL_FEES,
     "accounting": ExpenseCategory.PROFESSIONAL_FEES,
-    "consulting": ExpenseCategory.PROFESSIONAL_FEES,
-    "professional": ExpenseCategory.PROFESSIONAL_FEES,
     "attorney": ExpenseCategory.PROFESSIONAL_FEES,
     "cpa": ExpenseCategory.PROFESSIONAL_FEES,
     
@@ -185,14 +229,6 @@ EXPENSE_KEYWORDS: dict[str, ExpenseCategory] = {
     "office supply": ExpenseCategory.OFFICE_SUPPLIES,
     "supplies": ExpenseCategory.OFFICE_SUPPLIES,
     "stationery": ExpenseCategory.OFFICE_SUPPLIES,
-    
-    # Travel
-    "travel": ExpenseCategory.TRAVEL,
-    "hotel": ExpenseCategory.TRAVEL,
-    "flight": ExpenseCategory.TRAVEL,
-    "airfare": ExpenseCategory.TRAVEL,
-    "meal": ExpenseCategory.TRAVEL,
-    "entertainment": ExpenseCategory.TRAVEL,
 }
 
 
