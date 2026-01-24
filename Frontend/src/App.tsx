@@ -176,15 +176,20 @@ function DashboardOverview({ onNavigate, highlightedElement }: { onNavigate?: (l
           <button className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm">
             Export Report
           </button>
-          {incomeStatementData && (
-            <button
-              onClick={() => setViewMode('incomeStatement')}
-              className="px-4 py-2 bg-purple-600 text-white font-medium rounded-lg text-sm hover:bg-purple-700 transition-colors shadow-sm flex items-center"
-            >
-              <TrendingUp className="w-4 h-4 mr-2" />
-              Analyze Income Statement
-            </button>
-          )}
+          <button
+            onClick={() => {
+              if (incomeStatementData) {
+                setViewMode('incomeStatement');
+              } else {
+                // Navigate to Fiscal Core with income statement tab
+                onNavigate?.('fiscalcore-incomestatement');
+              }
+            }}
+            className="px-4 py-2 bg-purple-600 text-white font-medium rounded-lg text-sm hover:bg-purple-700 transition-colors shadow-sm flex items-center"
+          >
+            <TrendingUp className="w-4 h-4 mr-2" />
+            Analyze Income Statement
+          </button>
         </div>
       </div>
 
@@ -372,9 +377,18 @@ function MetricCard({ title, value, subtitle, icon: Icon, color }: { title: stri
 function AppContent() {
   const [activeLayer, setActiveLayer] = useState('dashboard');
   const [highlightedElement, setHighlightedElement] = useState<string | null>(null);
+  const [fiscalCoreDefaultTab, setFiscalCoreDefaultTab] = useState<'transactions' | 'balancesheet' | 'incomestatement' | undefined>(undefined);
 
   const handleSetActiveLayer = (layer: string, elementId?: string) => {
-    setActiveLayer(layer);
+    // Handle fiscalcore-{tab} navigation pattern
+    if (layer.startsWith('fiscalcore-')) {
+      const tab = layer.replace('fiscalcore-', '') as 'transactions' | 'balancesheet' | 'incomestatement';
+      setFiscalCoreDefaultTab(tab);
+      setActiveLayer('fiscalcore');
+    } else {
+      setFiscalCoreDefaultTab(undefined);
+      setActiveLayer(layer);
+    }
 
     if (elementId) {
       // Wait for the component to render, then scroll and highlight
@@ -396,7 +410,7 @@ function AppContent() {
   const renderLayer = () => {
     switch (activeLayer) {
       case 'dashboard': return <DashboardOverview onNavigate={handleSetActiveLayer} highlightedElement={highlightedElement} />;
-      case 'fiscalcore': return <FiscalCore onNavigate={handleSetActiveLayer} />;
+      case 'fiscalcore': return <FiscalCore onNavigate={handleSetActiveLayer} defaultTab={fiscalCoreDefaultTab} />;
       case 'layer2': return <Layer2Forecaster />;
       case 'layer3': return <Layer3Advisor />;
       case 'assets': return <AssetValuator />;
