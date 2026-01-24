@@ -58,8 +58,8 @@ export function MonthlyTrendChart({ monthlyBreakdown }: MonthlyTrendChartProps) 
         if (active && payload && payload.length) {
             const total = payload.reduce((sum: number, p: any) => sum + (p.value || 0), 0);
             return (
-                <div className="bg-white p-4 rounded-lg shadow-lg border border-slate-200 min-w-[180px]">
-                    <p className="font-semibold text-slate-900 mb-2">{label}</p>
+                <div className="bg-white dark:bg-slate-800 p-4 rounded-lg shadow-lg border border-slate-200 dark:border-slate-700 min-w-[180px]">
+                    <p className="font-semibold text-slate-900 dark:text-slate-100 mb-2">{label}</p>
                     {payload.map((entry: any, index: number) => (
                         <div key={index} className="flex justify-between items-center text-sm py-0.5">
                             <span className="flex items-center">
@@ -67,16 +67,18 @@ export function MonthlyTrendChart({ monthlyBreakdown }: MonthlyTrendChartProps) 
                                     className="w-3 h-3 rounded-full mr-2"
                                     style={{ backgroundColor: entry.color }}
                                 />
-                                {CATEGORY_DISPLAY[entry.dataKey as SpendingCategory]?.label || entry.dataKey}
+                                <span className="text-slate-700 dark:text-slate-300">
+                                    {CATEGORY_DISPLAY[entry.dataKey as SpendingCategory]?.label || entry.dataKey}
+                                </span>
                             </span>
-                            <span className="font-medium text-slate-700">
+                            <span className="font-medium text-slate-700 dark:text-slate-200">
                                 ${entry.value?.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                             </span>
                         </div>
                     ))}
-                    <div className="border-t border-slate-100 mt-2 pt-2 flex justify-between">
-                        <span className="font-semibold text-slate-900">Total</span>
-                        <span className="font-bold text-slate-900">
+                    <div className="border-t border-slate-100 dark:border-slate-600 mt-2 pt-2 flex justify-between">
+                        <span className="font-semibold text-slate-900 dark:text-slate-100">Total</span>
+                        <span className="font-bold text-slate-900 dark:text-slate-100">
                             ${total.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                         </span>
                     </div>
@@ -115,7 +117,7 @@ export function MonthlyTrendChart({ monthlyBreakdown }: MonthlyTrendChartProps) 
                     <Legend
                         wrapperStyle={{ paddingTop: '20px' }}
                         formatter={(value: string) => (
-                            <span className="text-sm text-slate-700">
+                            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
                                 {CATEGORY_DISPLAY[value as SpendingCategory]?.label || value}
                             </span>
                         )}
