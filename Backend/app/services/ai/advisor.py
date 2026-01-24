@@ -135,6 +135,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
     Returns:
         ChatResponse with advisor's reply and suggestions
     """
+    from app.core.key_rotation import execute_with_rotation, get_key_manager
+    
     settings = get_settings()
     
     # Generate session ID if not provided
@@ -155,9 +157,11 @@ async def chat(request: ChatRequest) -> ChatResponse:
             is_financial=False
         )
     
-    # Check for API key
-    if not settings.GEMINI_API_KEY:
-        logger.warning("GEMINI_API_KEY not set, returning fallback response")
+    key_manager = get_key_manager()
+    
+    # Check for API keys
+    if not key_manager.has_keys:
+        logger.warning("No Gemini API keys configured, returning fallback response")
         return ChatResponse(
             message="I'm currently unable to provide personalized advice. "
                     "Please ensure the service is properly configured.",
@@ -166,8 +170,8 @@ async def chat(request: ChatRequest) -> ChatResponse:
             is_financial=True
         )
     
-    try:
-        genai.configure(api_key=settings.GEMINI_API_KEY)
+    async def _chat_with_ai() -> ChatResponse:
+        """Execute the AI chat."""
         model = genai.GenerativeModel('gemini-2.5-flash')
         
         # Build the full prompt with context
@@ -205,7 +209,19 @@ async def chat(request: ChatRequest) -> ChatResponse:
             suggestions=suggestions,
             is_financial=True
         )
-        
+    
+    try:
+        return await execute_with_rotation(
+            _chat_with_ai,
+            fallback=lambda: ChatResponse(
+                message="I apologize, but I encountered an issue processing your request. "
+                        "Please try rephrasing your question or try again shortly.",
+                session_id=session_id,
+                suggestions=["Try asking again", "Rephrase your question"],
+                is_financial=True
+            ),
+            operation_name="financial advisor chat"
+        )
     except Exception as e:
         logger.exception(f"Advisor chat error: {e}")
         return ChatResponse(

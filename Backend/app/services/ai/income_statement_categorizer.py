@@ -220,37 +220,37 @@ async def categorize_income_statement_items(
         ValueError: If Gemini API returns invalid response
         Exception: For API connection or other errors
     """
+    from app.core.key_rotation import execute_with_rotation, get_key_manager
+    
     if not items:
         return []
     
-    settings = get_settings()
+    key_manager = get_key_manager()
     
-    if not settings.GEMINI_API_KEY:
-        logger.warning("GEMINI_API_KEY not set, using fallback categorization")
+    if not key_manager.has_keys:
+        logger.warning("No Gemini API keys configured, using fallback categorization")
         return _fallback_categorization(items)
     
-    genai.configure(api_key=settings.GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-2.5-flash')
-    
-    # Format items for the prompt
-    formatted_items = "\n".join([
-        f"{i+1}. Description: \"{item.description}\", Amount: ${item.amount:.2f}" +
-        (f", Type Hint: {item.type_hint}" if item.type_hint else "")
-        for i, item in enumerate(items)
-    ])
-    
-    prompt = INCOME_STATEMENT_PROMPT.format(items=formatted_items)
-    
-    try:
+    async def _categorize_with_ai() -> list[IncomeStatementItem]:
+        """Execute the AI categorization."""
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        
+        formatted_items = "\n".join([
+            f"{i+1}. Description: \"{item.description}\", Amount: ${item.amount:.2f}" +
+            (f", Type Hint: {item.type_hint}" if item.type_hint else "")
+            for i, item in enumerate(items)
+        ])
+        
+        prompt = INCOME_STATEMENT_PROMPT.format(items=formatted_items)
+        
         response = await model.generate_content_async(
             prompt,
             generation_config=genai.GenerationConfig(
-                temperature=0.1,  # Low temp for consistent categorization
+                temperature=0.1,
                 response_mime_type="application/json"
             )
         )
         
-        # Parse the response
         response_text = response.text.strip()
         logger.debug(f"Gemini response: {response_text}")
         
@@ -264,14 +264,12 @@ async def categorize_income_statement_items(
                 f"Mismatch: got {len(categorizations)} categories for {len(items)} items"
             )
         
-        # Map categorizations to items
         categorized = []
         for item, cat_data in zip(items, categorizations):
             item_type = cat_data.get("type", "expense").lower()
             category = cat_data.get("category", "other_expenses")
             confidence = _validate_confidence(cat_data.get("confidence", 0.8))
             
-            # Validate category based on type
             if item_type == "revenue":
                 category = _validate_revenue_category(category)
             else:
@@ -287,7 +285,13 @@ async def categorize_income_statement_items(
             ))
         
         return categorized
-        
+    
+    try:
+        return await execute_with_rotation(
+            _categorize_with_ai,
+            fallback=lambda: _fallback_categorization(items),
+            operation_name="income statement categorization"
+        )
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse Gemini response as JSON: {e}")
         return _fallback_categorization(items)

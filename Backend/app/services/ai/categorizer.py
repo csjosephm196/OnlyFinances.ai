@@ -103,81 +103,83 @@ async def categorize_transactions(
         ValueError: If Gemini API returns invalid response
         Exception: For API connection or other errors
     """
+    from app.core.key_rotation import execute_with_rotation, get_key_manager
+    
     if not transactions:
         return []
     
-    settings = get_settings()
+    key_manager = get_key_manager()
     
-    if not settings.GEMINI_API_KEY:
-        logger.warning("GEMINI_API_KEY not set, using fallback categorization")
+    if not key_manager.has_keys:
+        logger.warning("No Gemini API keys configured, using fallback categorization")
         return _fallback_categorization(transactions)
     
-    genai.configure(api_key=settings.GEMINI_API_KEY)
-    model = genai.GenerativeModel('gemini-2.5-flash')
-    
-    # Format transactions for the prompt
-    formatted_transactions = "\n".join([
-        f"{i+1}. Date: {t.date}, Description: \"{t.description}\", Amount: ${abs(t.amount):.2f}"
-        for i, t in enumerate(transactions)
-    ])
-    
-    prompt = CATEGORIZATION_PROMPT.format(transactions=formatted_transactions)
+    async def _process_batch(batch: list[Transaction]) -> list[CategorizedTransaction]:
+        """Process a single batch of transactions."""
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        
+        batch_formatted = "\n".join([
+            f"{j+1}. Date: {t.date}, Description: \"{t.description}\", Amount: ${abs(t.amount):.2f}"
+            for j, t in enumerate(batch)
+        ])
+        
+        batch_prompt = CATEGORIZATION_PROMPT.format(transactions=batch_formatted)
+        
+        response = await model.generate_content_async(
+            batch_prompt,
+            generation_config=genai.GenerationConfig(
+                temperature=0.1,
+                response_mime_type="application/json"
+            )
+        )
+        
+        response_text = response.text.strip()
+        logger.debug(f"Gemini response: {response_text}")
+        
+        categorizations = json.loads(response_text)
+        
+        if not isinstance(categorizations, list):
+            raise ValueError("Expected JSON array response from Gemini")
+        
+        if len(categorizations) != len(batch):
+            logger.warning(
+                f"Mismatch: got {len(categorizations)} categories for {len(batch)} transactions"
+            )
+        
+        result = []
+        for txn, cat_data in zip(batch, categorizations):
+            category = _validate_category(cat_data.get("category", "other"))
+            confidence = _validate_confidence(cat_data.get("confidence", 0.8))
+            
+            result.append(CategorizedTransaction(
+                date=txn.date,
+                description=txn.description,
+                amount=txn.amount,
+                category=category,
+                confidence=confidence,
+                original_category=txn.original_category
+            ))
+        
+        return result
     
     try:
-        # Process in batches if there are many transactions
         batch_size = 50
         all_categorized = []
         
         for i in range(0, len(transactions), batch_size):
             batch = transactions[i:i + batch_size]
-            batch_formatted = "\n".join([
-                f"{j+1}. Date: {t.date}, Description: \"{t.description}\", Amount: ${abs(t.amount):.2f}"
-                for j, t in enumerate(batch)
-            ])
             
-            batch_prompt = CATEGORIZATION_PROMPT.format(transactions=batch_formatted)
-            
-            response = await model.generate_content_async(
-                batch_prompt,
-                generation_config=genai.GenerationConfig(
-                    temperature=0.1,  # Low temp for consistent categorization
-                    response_mime_type="application/json"
-                )
+            batch_result = await execute_with_rotation(
+                lambda b=batch: _process_batch(b),
+                fallback=lambda b=batch: _fallback_categorization(b),
+                operation_name="transaction categorization"
             )
-            
-            # Parse the response
-            response_text = response.text.strip()
-            logger.debug(f"Gemini response: {response_text}")
-            
-            categorizations = json.loads(response_text)
-            
-            if not isinstance(categorizations, list):
-                raise ValueError("Expected JSON array response from Gemini")
-            
-            if len(categorizations) != len(batch):
-                logger.warning(
-                    f"Mismatch: got {len(categorizations)} categories for {len(batch)} transactions"
-                )
-            
-            # Map categorizations to transactions
-            for j, (txn, cat_data) in enumerate(zip(batch, categorizations)):
-                category = _validate_category(cat_data.get("category", "other"))
-                confidence = _validate_confidence(cat_data.get("confidence", 0.8))
-                
-                all_categorized.append(CategorizedTransaction(
-                    date=txn.date,
-                    description=txn.description,
-                    amount=txn.amount,
-                    category=category,
-                    confidence=confidence,
-                    original_category=txn.original_category
-                ))
+            all_categorized.extend(batch_result)
         
         return all_categorized
         
     except json.JSONDecodeError as e:
         logger.error(f"Failed to parse Gemini response as JSON: {e}")
-        # Fall back to rule-based categorization
         return _fallback_categorization(transactions)
     except Exception as e:
         logger.error(f"Gemini categorization failed: {e}")
