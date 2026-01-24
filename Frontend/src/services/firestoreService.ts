@@ -334,6 +334,7 @@ export async function mergeBudgetHistory(
         const budgetRef = doc(db, 'budgetHistory', existingMasterId);
         
         await updateDoc(budgetRef, {
+            uploadedAt: Timestamp.now(),
             dateRange: mergedResult.date_range,
             totalTransactions: mergedResult.total_transactions,
             summary: mergedResult.summary,
@@ -558,6 +559,7 @@ export async function mergeBalanceSheetHistory(
         const balanceRef = doc(db, 'balanceSheets', existingMasterId);
         
         await updateDoc(balanceRef, {
+            uploadedAt: Timestamp.now(),
             date: mergedData.date,
             totalItems: mergedData.total_items,
             equity: mergedData.equity,
@@ -782,6 +784,7 @@ export async function mergeIncomeStatementHistory(
         const incomeRef = doc(db, 'incomeStatements', existingMasterId);
         
         await updateDoc(incomeRef, {
+            uploadedAt: Timestamp.now(),
             period: mergedData.period,
             totalItems: mergedData.total_items,
             grossProfit: mergedData.gross_profit,

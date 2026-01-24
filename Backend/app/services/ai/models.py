@@ -448,6 +448,7 @@ class RevenueCategory(str, Enum):
     """Revenue categories for income statement classification."""
     SALES = "sales"
     SERVICES = "services"
+    WAGES_SALARY = "wages_salary"  # Employment income, paychecks
     INTEREST_INCOME = "interest_income"
     INVESTMENT_INCOME = "investment_income"
     RENTAL_INCOME = "rental_income"
