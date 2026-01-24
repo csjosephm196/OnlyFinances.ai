@@ -1,19 +1,71 @@
-import React, { useState } from 'react';
-import { LayoutDashboard, FileText, TrendingUp, MessageSquare, PieChart, Menu, Bell, Search, Command, LogOut, Sparkles, Layers, BarChart3 } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { LayoutDashboard, FileText, TrendingUp, MessageSquare, PieChart, Menu, Bell, Search, Command, LogOut, Sparkles, Layers, BarChart3, ArrowRight } from 'lucide-react';
 import { motion } from 'motion/react';
 import { ThemeToggle } from './ThemeToggle';
-
+import { SearchResults } from './SearchResults';
+import { useSearch } from '../hooks/useSearch';
 import { useAuth } from '../hooks/useAuth';
 
 interface LayoutProps {
   children: React.ReactNode;
   activeLayer: string;
-  setActiveLayer: (layer: string) => void;
+  setActiveLayer: (layer: string, elementId?: string) => void;
 }
 
 export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const { signOut } = useAuth();
+  const { searchQuery, setSearchQuery, searchResults, isSearchOpen, setIsSearchOpen } = useSearch();
+  const searchRef = useRef<HTMLDivElement>(null);
+
+  // Close search on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
+        setIsSearchOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [setIsSearchOpen]);
+
+  // Handle keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Cmd/Ctrl + K to open search
+      if ((event.metaKey || event.ctrlKey) && event.key === 'k') {
+        event.preventDefault();
+        setIsSearchOpen(true);
+      }
+      // Escape to close search
+      if (event.key === 'Escape') {
+        setIsSearchOpen(false);
+        setSearchQuery('');
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [setIsSearchOpen, setSearchQuery]);
+
+  const handleSearchResultClick = (item: { platformId: string; elementId?: string }) => {
+    setActiveLayer(item.platformId, item.elementId);
+    setSearchQuery('');
+    setIsSearchOpen(false);
+  };
+
+  const navigateToFirstResult = () => {
+    if (searchResults.length > 0) {
+      handleSearchResultClick(searchResults[0]);
+    }
+  };
+
+  const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      navigateToFirstResult();
+    }
+  };
 
   // Get today's date in Eastern Time (Ontario)
   const getTodayDate = () => {
@@ -56,7 +108,7 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
             className={`flex items-center group relative ${sidebarOpen ? 'space-x-3 flex-1' : ''}`}
             onClick={() => setSidebarOpen(!sidebarOpen)}
           >
-            <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 flex-shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-indigo-500/50 group-hover:ring-2 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 group-hover:ring-offset-2 group-hover:ring-offset-white dark:group-hover:ring-offset-slate-800 relative cursor-pointer">
+            <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-500 dark:via-purple-500 dark:to-pink-500 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 flex-shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-indigo-500/50 group-hover:ring-2 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 group-hover:ring-offset-2 group-hover:ring-offset-white dark:group-hover:ring-offset-slate-800 relative cursor-pointer animate-gradient bg-[length:200%_200%]">
               <Sparkles className="w-6 h-6 text-white transition-transform duration-200 group-hover:rotate-12" />
               
               {/* Visual indicator at bottom */}
@@ -72,22 +124,47 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
           </button>
         </div>
 
-        <div className={`px-3 mb-6 ${!sidebarOpen && 'px-2'}`}>
+        <div className={`px-3 mb-6 ${!sidebarOpen && 'px-2'}`} ref={searchRef}>
           {sidebarOpen ? (
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search..."
-                className="w-full pl-9 pr-3 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-600 dark:text-slate-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                placeholder="Search"
+                value={searchQuery}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  setIsSearchOpen(true);
+                }}
+                onFocus={() => setIsSearchOpen(true)}
+                onKeyDown={handleSearchKeyDown}
+                className="w-full pl-9 pr-10 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-600 dark:text-slate-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
               />
-              <div className="absolute right-2.5 top-2.5 hidden lg:flex items-center space-x-0.5 text-slate-400">
-                <Command className="w-3 h-3" />
-                <span className="text-[10px] font-medium">K</span>
-              </div>
+              <button
+                onClick={navigateToFirstResult}
+                disabled={searchResults.length === 0}
+                className="absolute right-2 top-2 p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-slate-400 transition-colors rounded"
+                title="Go to first result (Enter)"
+              >
+                <ArrowRight className="w-4 h-4" />
+              </button>
+              {isSearchOpen && (
+                <SearchResults
+                  results={searchResults}
+                  query={searchQuery}
+                  onSelectResult={handleSearchResultClick}
+                  onClose={() => setIsSearchOpen(false)}
+                />
+              )}
             </div>
           ) : (
-            <button className="w-full p-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all duration-200 flex items-center justify-center">
+            <button 
+              onClick={() => {
+                setSidebarOpen(true);
+                setIsSearchOpen(true);
+              }}
+              className="w-full p-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all duration-200 flex items-center justify-center"
+            >
               <Search className="w-5 h-5" />
             </button>
           )}

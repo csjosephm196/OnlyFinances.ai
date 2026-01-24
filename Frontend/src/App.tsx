@@ -13,7 +13,7 @@ import { ArrowUpRight, ArrowDownRight, Wallet, Activity, CalendarClock, Trending
 import { LoginPage } from './components/LoginPage';
 import { useAuth } from './hooks/useAuth';
 
-function DashboardOverview({ onNavigate }: { onNavigate?: (layer: string) => void }) {
+function DashboardOverview({ onNavigate, highlightedElement }: { onNavigate?: (layer: string) => void; highlightedElement?: string | null }) {
   const { processingResult, incomeStatementData } = useBudget();
 
   // Calculate metrics from real data
@@ -95,27 +95,33 @@ function DashboardOverview({ onNavigate }: { onNavigate?: (layer: string) => voi
 
       {/* Metric Cards with Real Data */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <MetricCard
-          title="Total Spending"
-          value={`$${totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
-          subtitle="All categories combined"
-          icon={Wallet}
-          color="indigo"
-        />
-        <MetricCard
-          title="Transactions"
-          value={transactionCount.toString()}
-          subtitle="Processed by AI"
-          icon={Activity}
-          color="rose"
-        />
-        <MetricCard
-          title="Top Category"
-          value={topCategory ? CATEGORY_DISPLAY[topCategory[0] as SpendingCategory]?.label || topCategory[0] : '-'}
-          subtitle={topCategory ? `$${Math.abs(topCategory[1]).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : ''}
-          icon={TrendingUp}
-          color="emerald"
-        />
+        <div id="metric-total-spending" className={`transition-all duration-300 ${highlightedElement === 'metric-total-spending' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900 rounded-xl' : ''}`}>
+          <MetricCard
+            title="Total Spending"
+            value={`$${totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
+            subtitle="All categories combined"
+            icon={Wallet}
+            color="indigo"
+          />
+        </div>
+        <div id="metric-transactions" className={`transition-all duration-300 ${highlightedElement === 'metric-transactions' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900 rounded-xl' : ''}`}>
+          <MetricCard
+            title="Transactions"
+            value={transactionCount.toString()}
+            subtitle="Processed by AI"
+            icon={Activity}
+            color="rose"
+          />
+        </div>
+        <div id="metric-top-category" className={`transition-all duration-300 ${highlightedElement === 'metric-top-category' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900 rounded-xl' : ''}`}>
+          <MetricCard
+            title="Top Category"
+            value={topCategory ? CATEGORY_DISPLAY[topCategory[0] as SpendingCategory]?.label || topCategory[0] : '-'}
+            subtitle={topCategory ? `$${Math.abs(topCategory[1]).toLocaleString('en-US', { minimumFractionDigits: 2 })}` : ''}
+            icon={TrendingUp}
+            color="emerald"
+          />
+        </div>
         <MetricCard
           title="Categories"
           value={Object.keys(processingResult.summary).filter(k => processingResult.summary[k as SpendingCategory] !== 0).length.toString()}
@@ -127,7 +133,10 @@ function DashboardOverview({ onNavigate }: { onNavigate?: (layer: string) => voi
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Spending by Category Pie Chart */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+        <div 
+          id="chart-pie"
+          className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'chart-pie' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}`}
+        >
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-semibold text-slate-900 dark:text-slate-100">Spending by Category</h3>
           </div>
@@ -135,7 +144,10 @@ function DashboardOverview({ onNavigate }: { onNavigate?: (layer: string) => voi
         </div>
 
         {/* Monthly Trends Chart */}
-        <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+        <div 
+          id="chart-monthly-trends"
+          className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'chart-monthly-trends' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}`}
+        >
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-semibold text-slate-900 dark:text-slate-100">Monthly Spending Trends</h3>
           </div>
@@ -144,7 +156,10 @@ function DashboardOverview({ onNavigate }: { onNavigate?: (layer: string) => voi
       </div>
 
       {/* Top Spending Categories */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
+      <div 
+        id="spending-breakdown"
+        className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'spending-breakdown' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}`}
+      >
         <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4">Spending Breakdown</h3>
         <div className="space-y-4">
           {Object.entries(processingResult.summary)
@@ -261,20 +276,41 @@ function MetricCard({ title, value, subtitle, icon: Icon, color }: { title: stri
 
 function AppContent() {
   const [activeLayer, setActiveLayer] = useState('dashboard');
+  const [highlightedElement, setHighlightedElement] = useState<string | null>(null);
+
+  const handleSetActiveLayer = (layer: string, elementId?: string) => {
+    setActiveLayer(layer);
+    
+    if (elementId) {
+      // Wait for the component to render, then scroll and highlight
+      setTimeout(() => {
+        const element = document.getElementById(elementId);
+        if (element) {
+          element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          setHighlightedElement(elementId);
+          
+          // Remove highlight after 2 seconds
+          setTimeout(() => {
+            setHighlightedElement(null);
+          }, 2000);
+        }
+      }, 100);
+    }
+  };
 
   const renderLayer = () => {
     switch (activeLayer) {
-      case 'dashboard': return <DashboardOverview onNavigate={setActiveLayer} />;
+      case 'dashboard': return <DashboardOverview onNavigate={handleSetActiveLayer} highlightedElement={highlightedElement} />;
       case 'fiscalcore': return <FiscalCore />;
       case 'layer2': return <Layer2Forecaster />;
       case 'layer3': return <Layer3Advisor />;
       case 'assets': return <AssetValuator />;
-      default: return <DashboardOverview />;
+      default: return <DashboardOverview highlightedElement={highlightedElement} />;
     }
   };
 
   return (
-    <Layout activeLayer={activeLayer} setActiveLayer={setActiveLayer}>
+    <Layout activeLayer={activeLayer} setActiveLayer={handleSetActiveLayer}>
       {renderLayer()}
     </Layout>
   );
