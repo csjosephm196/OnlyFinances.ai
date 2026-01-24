@@ -15,12 +15,16 @@ from app.services.ai import (
     advisor,
     stress_tester,
     tax_agent,
+    balance_sheet_processor,
+    income_statement_processor,
 )
 from app.services.ai.models import (
     ProcessingResult, 
     ProcessingError,
     ChatRequest,
     ChatResponse,
+    BalanceSheetData,
+    IncomeStatementData,
 )
 
 logger = logging.getLogger(__name__)
@@ -247,3 +251,257 @@ async def stress_test_endpoint() -> dict:
 async def tax_analysis_endpoint() -> dict:
     """L4: Analyze tax optimization opportunities."""
     return await tax_agent.analyze_tax_options({})
+
+
+@router.post(
+    "/process-balance-sheet",
+    response_model=BalanceSheetData,
+    responses={
+        400: {"model": ProcessingError, "description": "Invalid file or parsing error"},
+        413: {"model": ProcessingError, "description": "File too large"},
+        500: {"model": ProcessingError, "description": "Internal processing error"},
+    },
+    summary="Process Balance Sheet CSV File",
+    description="""
+    Upload a balance sheet CSV file to categorize assets and liabilities.
+    
+    The endpoint accepts CSV files with balance sheet data and automatically
+    detects columns for account name, type, and value.
+    
+    **Supported CSV formats:**
+    - Name columns: account name, name, item, description, etc.
+    - Type columns: type, account type, category, classification, etc.
+    - Value columns: balance, amount, value, total, debit, credit, etc.
+    
+    **Returns:**
+    - Categorized balance sheet items with AI-assigned categories
+    - Summary totals by category for assets and liabilities
+    - Calculated equity (assets - liabilities)
+    """,
+)
+async def process_balance_sheet_endpoint(
+    file: UploadFile = File(
+        ...,
+        description="Balance sheet CSV file to process"
+    )
+) -> Union[BalanceSheetData, JSONResponse]:
+    """
+    Process uploaded balance sheet CSV and categorize items.
+    
+    Accepts a CSV file containing balance sheet data.
+    Returns categorized items with asset/liability summaries.
+    """
+    # Validate file extension
+    if file.filename and not file.filename.lower().endswith('.csv'):
+        logger.warning(f"Rejected file with invalid extension: {file.filename}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "success": False,
+                "error_code": "INVALID_FILE_TYPE",
+                "message": "Only CSV files are accepted",
+                "details": {"filename": file.filename}
+            }
+        )
+    
+    # Read file content
+    try:
+        content = await file.read()
+    except Exception as e:
+        logger.error(f"Failed to read uploaded file: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "success": False,
+                "error_code": "READ_ERROR",
+                "message": "Failed to read uploaded file",
+                "details": {"error": str(e)}
+            }
+        )
+    
+    # Validate file size
+    if len(content) > MAX_FILE_SIZE:
+        logger.warning(f"Rejected oversized file: {len(content)} bytes")
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail={
+                "success": False,
+                "error_code": "FILE_TOO_LARGE",
+                "message": f"File size exceeds {MAX_FILE_SIZE // (1024*1024)}MB limit",
+                "details": {"size_bytes": len(content), "max_bytes": MAX_FILE_SIZE}
+            }
+        )
+    
+    # Validate file is not empty
+    if len(content) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "success": False,
+                "error_code": "EMPTY_FILE",
+                "message": "Uploaded file is empty"
+            }
+        )
+    
+    # Process the file
+    try:
+        result = await balance_sheet_processor.process_balance_sheet(
+            content, 
+            file.content_type or "text/csv"
+        )
+        logger.info(
+            f"Successfully processed {result.total_items} balance sheet items "
+            f"from {file.filename}"
+        )
+        return result
+        
+    except ValueError as e:
+        # Parsing or validation errors
+        logger.warning(f"Balance sheet parsing error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "success": False,
+                "error_code": "PARSE_ERROR",
+                "message": str(e)
+            }
+        )
+    except Exception as e:
+        # Unexpected errors
+        logger.exception(f"Unexpected error processing balance sheet: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "success": False,
+                "error_code": "PROCESSING_ERROR",
+                "message": "An unexpected error occurred while processing the file",
+                "details": {"error": str(e)}
+            }
+        )
+
+
+@router.post(
+    "/process-income-statement",
+    response_model=IncomeStatementData,
+    responses={
+        400: {"model": ProcessingError, "description": "Invalid file or parsing error"},
+        413: {"model": ProcessingError, "description": "File too large"},
+        500: {"model": ProcessingError, "description": "Internal processing error"},
+    },
+    summary="Process Income Statement CSV File",
+    description="""
+    Upload an income statement CSV file to categorize revenues and expenses.
+    
+    The endpoint accepts CSV files with income statement data and automatically
+    detects columns for description, type, and amount.
+    
+    **Supported CSV formats:**
+    - Description columns: description, line item, item, account, name, etc.
+    - Type columns: type, account type, classification, category, etc.
+    - Amount columns: amount, value, total, balance, debit, credit, etc.
+    
+    **Returns:**
+    - Categorized income statement items with AI-assigned categories
+    - Summary totals by category for revenues and expenses
+    - Calculated gross profit and net income
+    """,
+)
+async def process_income_statement_endpoint(
+    file: UploadFile = File(
+        ...,
+        description="Income statement CSV file to process"
+    )
+) -> Union[IncomeStatementData, JSONResponse]:
+    """
+    Process uploaded income statement CSV and categorize items.
+    
+    Accepts a CSV file containing income statement data.
+    Returns categorized items with revenue/expense summaries.
+    """
+    # Validate file extension
+    if file.filename and not file.filename.lower().endswith('.csv'):
+        logger.warning(f"Rejected file with invalid extension: {file.filename}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "success": False,
+                "error_code": "INVALID_FILE_TYPE",
+                "message": "Only CSV files are accepted",
+                "details": {"filename": file.filename}
+            }
+        )
+    
+    # Read file content
+    try:
+        content = await file.read()
+    except Exception as e:
+        logger.error(f"Failed to read uploaded file: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "success": False,
+                "error_code": "READ_ERROR",
+                "message": "Failed to read uploaded file",
+                "details": {"error": str(e)}
+            }
+        )
+    
+    # Validate file size
+    if len(content) > MAX_FILE_SIZE:
+        logger.warning(f"Rejected oversized file: {len(content)} bytes")
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail={
+                "success": False,
+                "error_code": "FILE_TOO_LARGE",
+                "message": f"File size exceeds {MAX_FILE_SIZE // (1024*1024)}MB limit",
+                "details": {"size_bytes": len(content), "max_bytes": MAX_FILE_SIZE}
+            }
+        )
+    
+    # Validate file is not empty
+    if len(content) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "success": False,
+                "error_code": "EMPTY_FILE",
+                "message": "Uploaded file is empty"
+            }
+        )
+    
+    # Process the file
+    try:
+        result = await income_statement_processor.process_income_statement(
+            content, 
+            file.content_type or "text/csv"
+        )
+        logger.info(
+            f"Successfully processed {result.total_items} income statement items "
+            f"from {file.filename}"
+        )
+        return result
+        
+    except ValueError as e:
+        # Parsing or validation errors
+        logger.warning(f"Income statement parsing error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "success": False,
+                "error_code": "PARSE_ERROR",
+                "message": str(e)
+            }
+        )
+    except Exception as e:
+        # Unexpected errors
+        logger.exception(f"Unexpected error processing income statement: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "success": False,
+                "error_code": "PROCESSING_ERROR",
+                "message": "An unexpected error occurred while processing the file",
+                "details": {"error": str(e)}
+            }
+        )

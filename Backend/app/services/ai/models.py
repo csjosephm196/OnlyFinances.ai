@@ -375,3 +375,139 @@ class ChatResponse(BaseModel):
                 "is_financial": True
             }
         }
+
+
+# ============================================================================
+# Balance Sheet Models
+# ============================================================================
+
+class AssetCategory(str, Enum):
+    """Asset categories for balance sheet classification."""
+    CASH = "cash"
+    ACCOUNTS_RECEIVABLE = "accounts_receivable"
+    INVENTORY = "inventory"
+    PREPAID_EXPENSES = "prepaid_expenses"
+    EQUIPMENT = "equipment"
+    PROPERTY = "property"
+    INVESTMENTS = "investments"
+    INTANGIBLE_ASSETS = "intangible_assets"
+    OTHER_ASSETS = "other_assets"
+
+
+class LiabilityCategory(str, Enum):
+    """Liability categories for balance sheet classification."""
+    ACCOUNTS_PAYABLE = "accounts_payable"
+    CREDIT_CARDS = "credit_cards"
+    SHORT_TERM_DEBT = "short_term_debt"
+    ACCRUED_EXPENSES = "accrued_expenses"
+    TAXES_PAYABLE = "taxes_payable"
+    LONG_TERM_DEBT = "long_term_debt"
+    DEFERRED_REVENUE = "deferred_revenue"
+    OTHER_LIABILITIES = "other_liabilities"
+
+
+class BalanceSheetItem(BaseModel):
+    """Individual balance sheet line item."""
+    name: str
+    type: Literal["asset", "liability"]
+    category: str  # AssetCategory or LiabilityCategory value
+    value: float
+    confidence: float = Field(ge=0.0, le=1.0, default=0.8)
+
+
+class AssetsSummary(BaseModel):
+    """Summary of all assets."""
+    items: list[BalanceSheetItem]
+    total: float
+    by_category: dict[str, float]  # AssetCategory value -> total
+
+
+class LiabilitiesSummary(BaseModel):
+    """Summary of all liabilities."""
+    items: list[BalanceSheetItem]
+    total: float
+    by_category: dict[str, float]  # LiabilityCategory value -> total
+
+
+class BalanceSheetData(BaseModel):
+    """Complete response from balance sheet processing endpoint."""
+    success: bool = True
+    date: str  # YYYY-MM-DD format
+    total_items: int
+    items: list[BalanceSheetItem]
+    assets: AssetsSummary
+    liabilities: LiabilitiesSummary
+    equity: float  # Total Assets - Total Liabilities
+
+
+# ============================================================================
+# Income Statement Models
+# ============================================================================
+
+class RevenueCategory(str, Enum):
+    """Revenue categories for income statement classification."""
+    SALES = "sales"
+    SERVICES = "services"
+    INTEREST_INCOME = "interest_income"
+    INVESTMENT_INCOME = "investment_income"
+    RENTAL_INCOME = "rental_income"
+    ROYALTIES = "royalties"
+    OTHER_REVENUE = "other_revenue"
+
+
+class ExpenseCategory(str, Enum):
+    """Expense categories for income statement classification."""
+    COST_OF_GOODS_SOLD = "cost_of_goods_sold"
+    SALARIES_WAGES = "salaries_wages"
+    RENT = "rent"
+    UTILITIES = "utilities"
+    MARKETING = "marketing"
+    INSURANCE = "insurance"
+    DEPRECIATION = "depreciation"
+    INTEREST_EXPENSE = "interest_expense"
+    TAXES = "taxes"
+    PROFESSIONAL_FEES = "professional_fees"
+    OFFICE_SUPPLIES = "office_supplies"
+    TRAVEL = "travel"
+    OTHER_EXPENSES = "other_expenses"
+
+
+class IncomeStatementItem(BaseModel):
+    """Individual income statement line item."""
+    description: str
+    type: Literal["revenue", "expense"]
+    category: str  # RevenueCategory or ExpenseCategory value
+    amount: float
+    confidence: float = Field(ge=0.0, le=1.0, default=0.8)
+
+
+class Period(BaseModel):
+    """Time period for income statement."""
+    start: str  # YYYY-MM-DD format
+    end: str    # YYYY-MM-DD format
+
+
+class RevenuesSummary(BaseModel):
+    """Summary of all revenues."""
+    items: list[IncomeStatementItem]
+    total: float
+    by_category: dict[str, float]  # RevenueCategory value -> total
+
+
+class ExpensesSummary(BaseModel):
+    """Summary of all expenses."""
+    items: list[IncomeStatementItem]
+    total: float
+    by_category: dict[str, float]  # ExpenseCategory value -> total
+
+
+class IncomeStatementData(BaseModel):
+    """Complete response from income statement processing endpoint."""
+    success: bool = True
+    period: Period
+    total_items: int
+    items: list[IncomeStatementItem]
+    revenues: RevenuesSummary
+    expenses: ExpensesSummary
+    gross_profit: float   # Total Revenue - Cost of Goods Sold
+    net_income: float     # Total Revenue - Total Expenses
