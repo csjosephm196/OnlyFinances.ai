@@ -7,8 +7,8 @@ from functools import lru_cache
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
     
-    # API Keys
-    GEMINI_API_KEY: str = ""
+    # API Keys (comma-separated for rotation support)
+    GEMINI_API_KEYS: str = ""  # e.g., "key1,key2,key3,key4,key5"
     
     # Application settings
     DEBUG: bool = False
