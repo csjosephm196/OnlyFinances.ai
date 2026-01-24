@@ -39,28 +39,29 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
         animate={{ width: sidebarOpen ? 260 : 72 }}
         className="flex flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm z-10"
       >
-        <div className="p-5 flex items-center justify-between">
-          <div className="flex items-center space-x-3 flex-1">
-            <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 flex-shrink-0">
-              <Sparkles className="w-6 h-6 text-white" />
+        <div className={`p-5 flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
+          <button 
+            className={`flex items-center group relative ${sidebarOpen ? 'space-x-3 flex-1' : ''}`}
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
+            <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 flex-shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-indigo-500/50 group-hover:ring-2 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 group-hover:ring-offset-2 group-hover:ring-offset-white dark:group-hover:ring-offset-slate-800 relative cursor-pointer">
+              <Sparkles className="w-6 h-6 text-white transition-transform duration-200 group-hover:rotate-12" />
+              
+              {/* Visual indicator at bottom */}
+              <div className={`absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[10px] font-medium rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap ${!sidebarOpen ? 'group-hover:-bottom-3' : ''}`}>
+                {sidebarOpen ? '←' : '→'}
+              </div>
             </div>
             {sidebarOpen && (
               <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap">
                 SovereignCFO
               </span>
             )}
-          </div>
-
-          <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all duration-200 flex-shrink-0"
-          >
-            <Menu className="w-5 h-5" />
           </button>
         </div>
 
-        <div className="px-3 mb-6">
-          {sidebarOpen && (
+        <div className={`px-3 mb-6 ${!sidebarOpen && 'px-2'}`}>
+          {sidebarOpen ? (
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 w-4 h-4 text-slate-400" />
               <input
@@ -73,6 +74,10 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
                 <span className="text-[10px] font-medium">K</span>
               </div>
             </div>
+          ) : (
+            <button className="w-full p-2.5 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition-all duration-200 flex items-center justify-center">
+              <Search className="w-5 h-5" />
+            </button>
           )}
         </div>
 
@@ -85,13 +90,14 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
               key={item.id}
               onClick={() => setActiveLayer(item.id)}
               className={`
-                w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200
+                w-full flex items-center rounded-lg text-sm font-medium transition-all duration-200
+                ${sidebarOpen ? 'px-3 py-2.5' : 'p-2.5 justify-center'}
                 ${activeLayer === item.id
                   ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100'}
               `}
             >
-              <item.icon className={`w-5 h-5 ${activeLayer === item.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'} ${sidebarOpen ? 'mr-3' : 'mx-auto'}`} />
+              <item.icon className={`w-5 h-5 ${activeLayer === item.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'} ${sidebarOpen ? 'mr-3' : ''}`} />
               {sidebarOpen && <span>{item.label}</span>}
             </button>
           ))}
@@ -99,16 +105,16 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
           {/* Logout Button */}
           <button
             onClick={handleLogout}
-            className="w-full flex items-center px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200 text-slate-600 dark:text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-600 dark:hover:text-rose-400 mt-auto mb-2"
+            className={`w-full flex items-center rounded-lg text-sm font-medium transition-all duration-200 text-slate-600 dark:text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-600 dark:hover:text-rose-400 mt-auto mb-2 ${sidebarOpen ? 'px-3 py-2.5' : 'p-2.5 justify-center'}`}
           >
-            <LogOut className={`w-5 h-5 ${sidebarOpen ? 'mr-3' : 'mx-auto'}`} />
+            <LogOut className={`w-5 h-5 ${sidebarOpen ? 'mr-3' : ''}`} />
             {sidebarOpen && <span>Log Out</span>}
           </button>
         </nav>
 
-        <div className="p-4 border-t border-slate-100 dark:border-slate-700">
+        <div className={`p-4 border-t border-slate-100 dark:border-slate-700 ${!sidebarOpen && 'flex justify-center'}`}>
           <button className="flex items-center w-full group">
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shadow-sm">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
               JD
             </div>
             {sidebarOpen && (
