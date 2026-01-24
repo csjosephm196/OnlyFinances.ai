@@ -77,6 +77,10 @@ export interface BudgetHistoryDocument {
     totalTransactions: number;
     summary: Record<SpendingCategory, number>;
     monthlyBreakdown: Record<string, Record<SpendingCategory, number>>;
+    // Merge tracking fields
+    sourceFiles?: string[];      // List of file names that contributed to this data
+    isMerged?: boolean;          // True if this document contains merged data
+    lastMergedAt?: Timestamp;    // Timestamp of last merge operation
 }
 
 export interface BudgetHistoryWithId extends BudgetHistoryDocument {
@@ -110,6 +114,10 @@ export interface BalanceSheetDocument {
         total: number;
         byCategory: Record<LiabilityCategory, number>;
     };
+    // Merge tracking fields
+    sourceFiles?: string[];      // List of file names that contributed to this data
+    isMerged?: boolean;          // True if this document contains merged data
+    lastMergedAt?: Timestamp;    // Timestamp of last merge operation
 }
 
 export interface BalanceSheetWithId extends BalanceSheetDocument {
@@ -147,6 +155,10 @@ export interface IncomeStatementDocument {
         total: number;
         byCategory: Record<ExpenseCategory, number>;
     };
+    // Merge tracking fields
+    sourceFiles?: string[];      // List of file names that contributed to this data
+    isMerged?: boolean;          // True if this document contains merged data
+    lastMergedAt?: Timestamp;    // Timestamp of last merge operation
 }
 
 export interface IncomeStatementWithId extends IncomeStatementDocument {
