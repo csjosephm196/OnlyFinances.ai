@@ -127,15 +127,29 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50/50 dark:bg-slate-900/50">
-        <header className="h-16 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-8 sticky top-0 z-20">
-          <div className="flex items-center space-x-2 text-sm breadcrumbs text-slate-500 dark:text-slate-400">
-            <span>Sovereign CFO</span>
-            <span className="text-slate-300 dark:text-slate-600">/</span>
-            <span className="font-medium text-slate-900 dark:text-slate-100">
-              {navItems.find(n => n.id === activeLayer)?.label}
-            </span>
-          </div>
+        <header className="h-20 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 md:px-8 sticky top-0 z-20 shadow-sm">
           <div className="flex items-center space-x-4">
+            <div className="flex items-center space-x-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 dark:from-indigo-500 dark:to-purple-500 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                <Sparkles className="w-5 h-5 text-white" />
+              </div>
+              <div className="flex flex-col">
+                <div className="flex items-center space-x-2">
+                  <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 dark:from-slate-100 dark:via-indigo-200 dark:to-slate-100 bg-clip-text text-transparent tracking-tight">
+                    {navItems.find(n => n.id === activeLayer)?.label || 'Dashboard'}
+                  </h1>
+                </div>
+                <div className="flex items-center space-x-1.5 text-xs md:text-sm text-slate-500 dark:text-slate-400 mt-0.5">
+                  <span className="font-medium">Sovereign CFO</span>
+                  <span className="text-slate-300 dark:text-slate-600">/</span>
+                  <span className="text-slate-400 dark:text-slate-500">
+                    {navItems.find(n => n.id === activeLayer)?.label || 'Dashboard'}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center space-x-3 md:space-x-4">
             <ThemeToggle />
             <button className="relative p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
               <Bell className="w-5 h-5" />
