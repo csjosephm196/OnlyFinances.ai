@@ -319,7 +319,7 @@ export function Layer2Forecaster() {
                 onSelect={setSelectedDate}
                 month={currentMonth}
                 onMonthChange={setCurrentMonth}
-                className="rounded-lg border border-slate-200 dark:border-slate-700"
+                className="rounded-lg border border-slate-200 dark:border-slate-700 p-4"
                 modifiers={modifiers}
                 modifiersClassNames={{
                   hasExpenses: "!bg-rose-100 dark:!bg-rose-900/30 !text-rose-900 dark:!text-rose-100 font-medium",
@@ -328,7 +328,16 @@ export function Layer2Forecaster() {
                   projected: "border-2 border-dashed border-slate-300 dark:border-slate-600",
                 }}
                 classNames={{
-                  day: "relative",
+                  months: "w-full",
+                  month: "w-full",
+                  table: "w-full",
+                  head_row: "flex w-full justify-between mb-2",
+                  head_cell: "w-12 h-8 flex items-center justify-center text-xs font-semibold text-slate-600 dark:text-slate-400",
+                  row: "flex w-full justify-between mb-1",
+                  cell: "w-12 h-12 flex items-center justify-center p-0",
+                  day: "w-10 h-10 rounded-md text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors",
+                  day_selected: "!bg-indigo-600 !text-white hover:!bg-indigo-700",
+                  day_today: "bg-slate-200 dark:bg-slate-700 font-semibold",
                 }}
                 disabled={(date) => {
                   // Disable dates outside the range (past start date - 30 days to end date + 90 days)
