@@ -34,13 +34,14 @@ logger = logging.getLogger(__name__)
 # Common column name mappings for balance sheet formats
 NAME_COLUMNS = [
     "account name", "name", "item name", "account", "description",
-    "item", "line item", "account description"
+    "item", "line item", "account description", "sub-category", "subcategory"
 ]
 TYPE_COLUMNS = [
     "type", "account type", "category", "classification", "class"
 ]
 VALUE_COLUMNS = [
-    "balance", "amount", "value", "total", "debit", "credit"
+    "balance", "amount", "value", "total", "debit", "credit",
+    "actual", "budgeted", "actual amount", "budget amount"
 ]
 
 
