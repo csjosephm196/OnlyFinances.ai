@@ -162,6 +162,12 @@ async def parse_income_statement_csv(file_content: bytes) -> list[RawIncomeState
             if not description:
                 continue
             
+            # Skip summary/total rows - these are calculated, not individual items
+            desc_lower = description.lower()
+            if _is_summary_row(desc_lower, row, type_col):
+                logger.debug(f"Row {row_num}: Skipping summary row '{description}'")
+                continue
+            
             # Parse type hint (optional)
             type_hint = row.get(type_col, "").strip() if type_col else None
             
@@ -191,6 +197,52 @@ async def parse_income_statement_csv(file_content: bytes) -> list[RawIncomeState
             continue
     
     return items
+
+
+def _is_summary_row(desc_lower: str, row: dict, type_col: str | None) -> bool:
+    """
+    Check if a row is a summary/total row that should be skipped.
+    
+    Summary rows typically include:
+    - Rows starting with "Total" (Total Income, Total Expenses, etc.)
+    - Rows containing "Net Income" or "Net Profit"
+    - Rows with "Summary" in the type/category field
+    - Grand total rows
+    """
+    # Check description for summary indicators
+    summary_keywords = [
+        "total income",
+        "total expense",
+        "total revenue",
+        "net income",
+        "net profit",
+        "net loss",
+        "grand total",
+        "subtotal",
+        "gross profit",
+        "operating income",
+    ]
+    
+    # Check if starts with "total"
+    if desc_lower.startswith("total"):
+        return True
+    
+    # Check for specific summary keywords
+    for keyword in summary_keywords:
+        if keyword in desc_lower:
+            return True
+    
+    # Check type field for summary indicator
+    if type_col:
+        type_value = row.get(type_col, "").lower().strip()
+        if type_value in ["summary", "total", "subtotal", ""]:
+            # Empty type with total-like name is a summary
+            if type_value == "" and desc_lower.startswith("total"):
+                return True
+            if type_value in ["summary", "total", "subtotal"]:
+                return True
+    
+    return False
 
 
 def _find_matching_column(

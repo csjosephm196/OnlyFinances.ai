@@ -147,6 +147,12 @@ async def parse_balance_sheet_csv(file_content: bytes) -> list[RawBalanceSheetIt
             if not name:
                 continue
             
+            # Skip summary/total rows - these are calculated, not individual items
+            name_lower = name.lower()
+            if _is_summary_row(name_lower, row, type_col):
+                logger.debug(f"Row {row_num}: Skipping summary row '{name}'")
+                continue
+            
             # Parse type hint (optional)
             type_hint = row.get(type_col, "").strip() if type_col else None
             
@@ -176,6 +182,48 @@ async def parse_balance_sheet_csv(file_content: bytes) -> list[RawBalanceSheetIt
             continue
     
     return items
+
+
+def _is_summary_row(name_lower: str, row: dict, type_col: str | None) -> bool:
+    """
+    Check if a row is a summary/total row that should be skipped.
+    
+    Summary rows typically include:
+    - Rows starting with "Total" (Total Assets, Total Liabilities, etc.)
+    - Rows containing "Net Worth"
+    - Rows with "Summary" in the type/category field
+    - Grand total rows
+    """
+    # Check name for summary indicators
+    summary_keywords = [
+        "total",
+        "net worth",
+        "grand total",
+        "subtotal",
+        "sum",
+        "balance",
+    ]
+    
+    for keyword in summary_keywords:
+        if name_lower.startswith(keyword) or keyword in name_lower:
+            # "Total" at the start is definitely a summary
+            if name_lower.startswith("total"):
+                return True
+            # "Net worth" anywhere is a summary
+            if "net worth" in name_lower:
+                return True
+    
+    # Check type field for summary indicator
+    if type_col:
+        type_value = row.get(type_col, "").lower().strip()
+        if type_value in ["summary", "total", "subtotal", ""]:
+            # Empty type with total-like name is a summary
+            if type_value == "" and any(kw in name_lower for kw in ["total", "net worth"]):
+                return True
+            if type_value in ["summary", "total", "subtotal"]:
+                return True
+    
+    return False
 
 
 def _find_matching_column(
