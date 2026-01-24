@@ -57,66 +57,51 @@ export function SpendingPieChart({ summary }: SpendingPieChartProps) {
 
     return (
         <div className="w-full">
-            <ResponsiveContainer width="100%" height={320}>
-                <PieChart>
-                    <Pie
-                        data={chartData}
-                        cx="50%"
-                        cy="50%"
-                        innerRadius={60}
-                        outerRadius={100}
-                        paddingAngle={2}
-                        dataKey="value"
-                        label={renderCustomLabel}
-                        labelLine={false}
-                    >
-                        {chartData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={entry.color} />
-                        ))}
-                    </Pie>
-                    <Tooltip content={<CustomTooltip />} />
-                    <Legend
-                        layout="vertical"
-                        align="right"
-                        verticalAlign="middle"
-                        formatter={(value: string) => {
-                            const data = chartData.find(d => d.name === value);
-                            return (
-                                <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                                    {data?.icon} {value}
-                                </span>
-                            );
-                        }}
-                        wrapperStyle={{ fontSize: '14px', fontWeight: '500' }}
-                    />
-                </PieChart>
-            </ResponsiveContainer>
-            <div className="text-center mt-4">
-                <p className="text-sm text-slate-500 dark:text-slate-400">Total Spending</p>
-                <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
-                    ${totalSpending.toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                </p>
-            </div>
-            {/* Category List Below Chart - Makes all categories visible */}
-            <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
-                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-200 mb-3">All Categories</h4>
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+            <div className="flex items-center justify-between gap-6">
+                {/* Pie Chart */}
+                <div className="relative flex-shrink-0" style={{ width: '280px', height: '280px' }}>
+                    <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                            <Pie
+                                data={chartData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={75}
+                                outerRadius={115}
+                                paddingAngle={2}
+                                dataKey="value"
+                                labelLine={false}
+                            >
+                                {chartData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                            </Pie>
+                            <Tooltip content={<CustomTooltip />} />
+                        </PieChart>
+                    </ResponsiveContainer>
+                    {/* Center text overlay */}
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="text-center">
+                            <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Total Spending</p>
+                            <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                                ${totalSpending.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                
+                {/* Legend */}
+                <div className="flex-1 space-y-1">
                     {chartData.map((entry, index) => {
-                        const percentage = ((entry.value / totalSpending) * 100).toFixed(1);
                         return (
-                            <div key={index} className="flex items-center space-x-2 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors border border-slate-200 dark:border-slate-600 shadow-sm">
+                            <div key={index} className="flex items-center gap-2 py-1 px-2 rounded hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
                                 <div 
-                                    className="w-4 h-4 rounded flex-shrink-0 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600"
+                                    className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
                                     style={{ backgroundColor: entry.color }}
                                 />
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 truncate">
-                                        {entry.icon} {entry.name}
-                                    </p>
-                                    <p className="text-xs text-slate-600 dark:text-slate-300 font-medium">
-                                        ${entry.value.toLocaleString('en-US', { minimumFractionDigits: 2 })} ({percentage}%)
-                                    </p>
-                                </div>
+                                <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                                    {entry.icon} {entry.name}
+                                </span>
                             </div>
                         );
                     })}
