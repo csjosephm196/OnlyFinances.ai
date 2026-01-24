@@ -15,6 +15,7 @@ import {
     limit,
     Timestamp,
     writeBatch,
+    arrayUnion,
 } from 'firebase/firestore';
 import { db } from '../lib/firebase';
 import {
@@ -297,6 +298,129 @@ export async function deleteBudgetHistory(budgetId: string): Promise<void> {
     await batch.commit();
 }
 
+/**
+ * Get or create the master budget document for a user.
+ * The master document consolidates all merged transaction data.
+ */
+async function getOrCreateMasterBudget(userId: string): Promise<string | null> {
+    const budgetRef = collection(db, 'budgetHistory');
+    const q = query(
+        budgetRef,
+        where('userId', '==', userId),
+        where('isMerged', '==', true),
+        limit(1)
+    );
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.docs.length > 0) {
+        return snapshot.docs[0].id;
+    }
+    return null;
+}
+
+/**
+ * Merge budget history - updates existing master document or creates new one
+ * with merged transaction data and tracking metadata.
+ */
+export async function mergeBudgetHistory(
+    userId: string,
+    fileName: string,
+    mergedResult: ProcessingResult
+): Promise<string> {
+    const existingMasterId = await getOrCreateMasterBudget(userId);
+    
+    if (existingMasterId) {
+        // Update existing master document
+        const budgetRef = doc(db, 'budgetHistory', existingMasterId);
+        
+        await updateDoc(budgetRef, {
+            dateRange: mergedResult.date_range,
+            totalTransactions: mergedResult.total_transactions,
+            summary: mergedResult.summary,
+            monthlyBreakdown: mergedResult.monthly_breakdown,
+            sourceFiles: arrayUnion(fileName),
+            lastMergedAt: Timestamp.now(),
+        });
+        
+        // Clear existing transactions and replace with merged set
+        const transactionsRef = collection(db, 'budgetHistory', existingMasterId, 'transactions');
+        const existingTransactions = await getDocs(transactionsRef);
+        
+        // Delete old transactions in batches
+        const deleteBatch = writeBatch(db);
+        existingTransactions.docs.forEach((docSnap) => {
+            deleteBatch.delete(docSnap.ref);
+        });
+        await deleteBatch.commit();
+        
+        // Add merged transactions in batches (Firestore limit is 500 per batch)
+        const batchSize = 450;
+        for (let i = 0; i < mergedResult.transactions.length; i += batchSize) {
+            const batch = writeBatch(db);
+            const chunk = mergedResult.transactions.slice(i, i + batchSize);
+            
+            chunk.forEach((transaction) => {
+                const transactionDoc: TransactionDocument = {
+                    date: transaction.date,
+                    description: transaction.description,
+                    amount: transaction.amount,
+                    category: transaction.category,
+                    confidence: transaction.confidence,
+                    originalCategory: transaction.original_category,
+                };
+                const newDocRef = doc(transactionsRef);
+                batch.set(newDocRef, transactionDoc);
+            });
+            
+            await batch.commit();
+        }
+        
+        return existingMasterId;
+    } else {
+        // Create new master document
+        const budgetRef = collection(db, 'budgetHistory');
+        const budgetData: BudgetHistoryDocument = {
+            userId,
+            fileName: `Merged: ${fileName}`,
+            uploadedAt: Timestamp.now(),
+            dateRange: mergedResult.date_range,
+            totalTransactions: mergedResult.total_transactions,
+            summary: mergedResult.summary,
+            monthlyBreakdown: mergedResult.monthly_breakdown,
+            sourceFiles: [fileName],
+            isMerged: true,
+            lastMergedAt: Timestamp.now(),
+        };
+        const docRef = await addDoc(budgetRef, budgetData);
+        
+        // Save transactions in batches
+        const transactionsRef = collection(db, 'budgetHistory', docRef.id, 'transactions');
+        const batchSize = 450;
+        
+        for (let i = 0; i < mergedResult.transactions.length; i += batchSize) {
+            const batch = writeBatch(db);
+            const chunk = mergedResult.transactions.slice(i, i + batchSize);
+            
+            chunk.forEach((transaction) => {
+                const transactionDoc: TransactionDocument = {
+                    date: transaction.date,
+                    description: transaction.description,
+                    amount: transaction.amount,
+                    category: transaction.category,
+                    confidence: transaction.confidence,
+                    originalCategory: transaction.original_category,
+                };
+                const newDocRef = doc(transactionsRef);
+                batch.set(newDocRef, transactionDoc);
+            });
+            
+            await batch.commit();
+        }
+        
+        return docRef.id;
+    }
+}
+
 // ============================================
 // Balance Sheet Operations
 // ============================================
@@ -398,6 +522,126 @@ export async function deleteBalanceSheet(balanceSheetId: string): Promise<void> 
     batch.delete(balanceRef);
 
     await batch.commit();
+}
+
+/**
+ * Get or create the master balance sheet document for a user.
+ */
+async function getOrCreateMasterBalanceSheet(userId: string): Promise<string | null> {
+    const balanceRef = collection(db, 'balanceSheets');
+    const q = query(
+        balanceRef,
+        where('userId', '==', userId),
+        where('isMerged', '==', true),
+        limit(1)
+    );
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.docs.length > 0) {
+        return snapshot.docs[0].id;
+    }
+    return null;
+}
+
+/**
+ * Merge balance sheet history - updates existing master document or creates new one
+ */
+export async function mergeBalanceSheetHistory(
+    userId: string,
+    fileName: string,
+    mergedData: BalanceSheetData
+): Promise<string> {
+    const existingMasterId = await getOrCreateMasterBalanceSheet(userId);
+    
+    if (existingMasterId) {
+        // Update existing master document
+        const balanceRef = doc(db, 'balanceSheets', existingMasterId);
+        
+        await updateDoc(balanceRef, {
+            date: mergedData.date,
+            totalItems: mergedData.total_items,
+            equity: mergedData.equity,
+            assets: {
+                total: mergedData.assets.total,
+                byCategory: mergedData.assets.by_category,
+            },
+            liabilities: {
+                total: mergedData.liabilities.total,
+                byCategory: mergedData.liabilities.by_category,
+            },
+            sourceFiles: arrayUnion(fileName),
+            lastMergedAt: Timestamp.now(),
+        });
+        
+        // Clear existing items and replace with merged set
+        const itemsRef = collection(db, 'balanceSheets', existingMasterId, 'items');
+        const existingItems = await getDocs(itemsRef);
+        
+        const deleteBatch = writeBatch(db);
+        existingItems.docs.forEach((docSnap) => {
+            deleteBatch.delete(docSnap.ref);
+        });
+        await deleteBatch.commit();
+        
+        // Add merged items
+        const addBatch = writeBatch(db);
+        mergedData.items.forEach((item) => {
+            const itemDoc: BalanceSheetItemDocument = {
+                name: item.name,
+                type: item.type,
+                category: item.category,
+                value: item.value,
+                confidence: item.confidence,
+            };
+            const newDocRef = doc(itemsRef);
+            addBatch.set(newDocRef, itemDoc);
+        });
+        await addBatch.commit();
+        
+        return existingMasterId;
+    } else {
+        // Create new master document
+        const balanceRef = collection(db, 'balanceSheets');
+        const balanceData: BalanceSheetDocument = {
+            userId,
+            fileName: `Merged: ${fileName}`,
+            uploadedAt: Timestamp.now(),
+            date: mergedData.date,
+            totalItems: mergedData.total_items,
+            equity: mergedData.equity,
+            assets: {
+                total: mergedData.assets.total,
+                byCategory: mergedData.assets.by_category,
+            },
+            liabilities: {
+                total: mergedData.liabilities.total,
+                byCategory: mergedData.liabilities.by_category,
+            },
+            sourceFiles: [fileName],
+            isMerged: true,
+            lastMergedAt: Timestamp.now(),
+        };
+        const docRef = await addDoc(balanceRef, balanceData);
+        
+        // Save items in subcollection
+        const itemsRef = collection(db, 'balanceSheets', docRef.id, 'items');
+        const batch = writeBatch(db);
+        
+        mergedData.items.forEach((item) => {
+            const itemDoc: BalanceSheetItemDocument = {
+                name: item.name,
+                type: item.type,
+                category: item.category,
+                value: item.value,
+                confidence: item.confidence,
+            };
+            const newDocRef = doc(itemsRef);
+            batch.set(newDocRef, itemDoc);
+        });
+        await batch.commit();
+        
+        return docRef.id;
+    }
 }
 
 // ============================================
@@ -502,6 +746,128 @@ export async function deleteIncomeStatement(incomeStatementId: string): Promise<
     batch.delete(incomeRef);
 
     await batch.commit();
+}
+
+/**
+ * Get or create the master income statement document for a user.
+ */
+async function getOrCreateMasterIncomeStatement(userId: string): Promise<string | null> {
+    const incomeRef = collection(db, 'incomeStatements');
+    const q = query(
+        incomeRef,
+        where('userId', '==', userId),
+        where('isMerged', '==', true),
+        limit(1)
+    );
+    const snapshot = await getDocs(q);
+    
+    if (snapshot.docs.length > 0) {
+        return snapshot.docs[0].id;
+    }
+    return null;
+}
+
+/**
+ * Merge income statement history - updates existing master document or creates new one
+ */
+export async function mergeIncomeStatementHistory(
+    userId: string,
+    fileName: string,
+    mergedData: IncomeStatementData
+): Promise<string> {
+    const existingMasterId = await getOrCreateMasterIncomeStatement(userId);
+    
+    if (existingMasterId) {
+        // Update existing master document
+        const incomeRef = doc(db, 'incomeStatements', existingMasterId);
+        
+        await updateDoc(incomeRef, {
+            period: mergedData.period,
+            totalItems: mergedData.total_items,
+            grossProfit: mergedData.gross_profit,
+            netIncome: mergedData.net_income,
+            revenues: {
+                total: mergedData.revenues.total,
+                byCategory: mergedData.revenues.by_category,
+            },
+            expenses: {
+                total: mergedData.expenses.total,
+                byCategory: mergedData.expenses.by_category,
+            },
+            sourceFiles: arrayUnion(fileName),
+            lastMergedAt: Timestamp.now(),
+        });
+        
+        // Clear existing items and replace with merged set
+        const itemsRef = collection(db, 'incomeStatements', existingMasterId, 'items');
+        const existingItems = await getDocs(itemsRef);
+        
+        const deleteBatch = writeBatch(db);
+        existingItems.docs.forEach((docSnap) => {
+            deleteBatch.delete(docSnap.ref);
+        });
+        await deleteBatch.commit();
+        
+        // Add merged items
+        const addBatch = writeBatch(db);
+        mergedData.items.forEach((item) => {
+            const itemDoc: IncomeStatementItemDocument = {
+                description: item.description,
+                type: item.type,
+                category: item.category,
+                amount: item.amount,
+                confidence: item.confidence,
+            };
+            const newDocRef = doc(itemsRef);
+            addBatch.set(newDocRef, itemDoc);
+        });
+        await addBatch.commit();
+        
+        return existingMasterId;
+    } else {
+        // Create new master document
+        const incomeRef = collection(db, 'incomeStatements');
+        const incomeData: IncomeStatementDocument = {
+            userId,
+            fileName: `Merged: ${fileName}`,
+            uploadedAt: Timestamp.now(),
+            period: mergedData.period,
+            totalItems: mergedData.total_items,
+            grossProfit: mergedData.gross_profit,
+            netIncome: mergedData.net_income,
+            revenues: {
+                total: mergedData.revenues.total,
+                byCategory: mergedData.revenues.by_category,
+            },
+            expenses: {
+                total: mergedData.expenses.total,
+                byCategory: mergedData.expenses.by_category,
+            },
+            sourceFiles: [fileName],
+            isMerged: true,
+            lastMergedAt: Timestamp.now(),
+        };
+        const docRef = await addDoc(incomeRef, incomeData);
+        
+        // Save items in subcollection
+        const itemsRef = collection(db, 'incomeStatements', docRef.id, 'items');
+        const batch = writeBatch(db);
+        
+        mergedData.items.forEach((item) => {
+            const itemDoc: IncomeStatementItemDocument = {
+                description: item.description,
+                type: item.type,
+                category: item.category,
+                amount: item.amount,
+                confidence: item.confidence,
+            };
+            const newDocRef = doc(itemsRef);
+            batch.set(newDocRef, itemDoc);
+        });
+        await batch.commit();
+        
+        return docRef.id;
+    }
 }
 
 // ============================================

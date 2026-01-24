@@ -18,12 +18,27 @@ import {
     getIncomeStatements,
     getIncomeStatementItems,
     deleteIncomeStatement,
+    mergeBudgetHistory,
+    mergeBalanceSheetHistory,
+    mergeIncomeStatementHistory,
 } from '../services/firestoreService';
 import {
     BudgetHistoryWithId,
     BalanceSheetWithId,
     IncomeStatementWithId,
 } from '../types/firestoreTypes';
+import {
+    mergeProcessingResults,
+    mergeBalanceSheets,
+    mergeIncomeStatements,
+} from '../utils/dataMerge';
+
+// Merge result type for UI notifications
+export interface MergeResult {
+    newCount: number;
+    skippedCount?: number;
+    updatedCount?: number;
+}
 
 interface BudgetContextType {
     // Current data in memory
@@ -39,6 +54,11 @@ interface BudgetContextType {
     saveBudgetToFirebase: (fileName: string, data: ProcessingResult) => Promise<void>;
     saveBalanceSheetToFirebase: (fileName: string, data: BalanceSheetData) => Promise<void>;
     saveIncomeStatementToFirebase: (fileName: string, data: IncomeStatementData) => Promise<void>;
+
+    // Merge functions - merge new data with existing and save
+    mergeBudgetToFirebase: (fileName: string, data: ProcessingResult) => Promise<MergeResult>;
+    mergeBalanceSheetToFirebase: (fileName: string, data: BalanceSheetData) => Promise<MergeResult>;
+    mergeIncomeStatementToFirebase: (fileName: string, data: IncomeStatementData) => Promise<MergeResult>;
 
     // History
     budgetHistoryList: BudgetHistoryWithId[];
@@ -193,6 +213,100 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
         }
     }, [user]);
 
+    // Merge budget data with existing and save to Firebase
+    const mergeBudgetToFirebase = useCallback(async (fileName: string, data: ProcessingResult): Promise<MergeResult> => {
+        if (!user) {
+            console.log('No user logged in, skipping merge');
+            return { newCount: 0, skippedCount: 0 };
+        }
+        setIsSaving(true);
+        try {
+            console.log('Merging budget to Firebase:', fileName, data.total_transactions, 'transactions');
+            
+            // Merge with current in-memory data
+            const { merged, newCount, skippedCount } = mergeProcessingResults(processingResult, data);
+            
+            // Update in-memory state
+            setProcessingResult(merged);
+            
+            // Save merged data to Firebase
+            await mergeBudgetHistory(user.uid, fileName, merged);
+            console.log(`Budget merged successfully: ${newCount} new, ${skippedCount} skipped`);
+            
+            // Refresh history after saving
+            await loadHistory();
+            
+            return { newCount, skippedCount };
+        } catch (err) {
+            console.error('Failed to merge budget to Firebase:', err);
+            throw err;
+        } finally {
+            setIsSaving(false);
+        }
+    }, [user, processingResult]);
+
+    // Merge balance sheet data with existing and save to Firebase
+    const mergeBalanceSheetToFirebase = useCallback(async (fileName: string, data: BalanceSheetData): Promise<MergeResult> => {
+        if (!user) {
+            console.log('No user logged in, skipping merge');
+            return { newCount: 0, updatedCount: 0 };
+        }
+        setIsSaving(true);
+        try {
+            console.log('Merging balance sheet to Firebase:', fileName);
+            
+            // Merge with current in-memory data
+            const { merged, newCount, updatedCount } = mergeBalanceSheets(balanceSheetData, data);
+            
+            // Update in-memory state
+            setBalanceSheetData(merged);
+            
+            // Save merged data to Firebase
+            await mergeBalanceSheetHistory(user.uid, fileName, merged);
+            console.log(`Balance sheet merged successfully: ${newCount} new, ${updatedCount} updated`);
+            
+            await loadHistory();
+            
+            return { newCount, updatedCount };
+        } catch (err) {
+            console.error('Failed to merge balance sheet to Firebase:', err);
+            throw err;
+        } finally {
+            setIsSaving(false);
+        }
+    }, [user, balanceSheetData]);
+
+    // Merge income statement data with existing and save to Firebase
+    const mergeIncomeStatementToFirebase = useCallback(async (fileName: string, data: IncomeStatementData): Promise<MergeResult> => {
+        if (!user) {
+            console.log('No user logged in, skipping merge');
+            return { newCount: 0, updatedCount: 0 };
+        }
+        setIsSaving(true);
+        try {
+            console.log('Merging income statement to Firebase:', fileName);
+            
+            // Merge with current in-memory data
+            const { merged, newCount, updatedCount } = mergeIncomeStatements(incomeStatementData, data);
+            
+            // Update in-memory state
+            setIncomeStatementData(merged);
+            
+            // Save merged data to Firebase
+            await mergeIncomeStatementHistory(user.uid, fileName, merged);
+            console.log(`Income statement merged successfully: ${newCount} new, ${updatedCount} updated`);
+            
+            await loadHistory();
+            
+            return { newCount, updatedCount };
+        } catch (err) {
+            console.error('Failed to merge income statement to Firebase:', err);
+            throw err;
+        } finally {
+            setIsSaving(false);
+        }
+    }, [user, incomeStatementData]);
+
     // Load all history from Firebase
     const loadHistory = useCallback(async () => {
         if (!user) return;
@@ -248,6 +362,9 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
             saveBudgetToFirebase,
             saveBalanceSheetToFirebase,
             saveIncomeStatementToFirebase,
+            mergeBudgetToFirebase,
+            mergeBalanceSheetToFirebase,
+            mergeIncomeStatementToFirebase,
             budgetHistoryList,
             balanceSheetHistoryList,
             incomeStatementHistoryList,

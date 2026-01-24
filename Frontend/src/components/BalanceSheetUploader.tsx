@@ -1,16 +1,18 @@
 import React, { useState, useRef } from 'react';
-import { Upload, CheckCircle2, ArrowRight, FileSpreadsheet, XCircle, DollarSign, CreditCard, Layers } from 'lucide-react';
+import { Upload, CheckCircle2, ArrowRight, FileSpreadsheet, XCircle, DollarSign, CreditCard, Layers, Plus, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
 import { uploadBalanceSheet } from '../services/budgetApi';
 import { BalanceSheetData, BalanceSheetItem } from '../types/balanceSheet';
-import { useBudget } from '../context/BudgetContext';
+import { useBudget, MergeResult } from '../context/BudgetContext';
 
 export function BalanceSheetUploader() {
     const [isDragOver, setIsDragOver] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
+    const [mergeMode, setMergeMode] = useState(true); // Default to merge mode
+    const [mergeNotification, setMergeNotification] = useState<MergeResult | null>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const { balanceSheetData, setBalanceSheetData, saveBalanceSheetToFirebase, isSaving } = useBudget();
+    const { balanceSheetData, setBalanceSheetData, saveBalanceSheetToFirebase, mergeBalanceSheetToFirebase, isSaving } = useBudget();
 
     const handleFileSelect = async (file: File) => {
         // Validate file type
@@ -27,17 +29,29 @@ export function BalanceSheetUploader() {
 
         setProcessing(true);
         setError(null);
+        setMergeNotification(null);
 
         try {
             const response = await uploadBalanceSheet(file);
 
             if (response.success) {
-                setBalanceSheetData(response);
-                // Auto-save to Firebase - pass response data directly
-                try {
-                    await saveBalanceSheetToFirebase(file.name, response);
-                } catch (saveError) {
-                    console.error('Failed to save to Firebase:', saveError);
+                if (mergeMode && balanceSheetData) {
+                    // Merge with existing data
+                    try {
+                        const result = await mergeBalanceSheetToFirebase(file.name, response);
+                        setMergeNotification(result);
+                    } catch (mergeError) {
+                        console.error('Failed to merge to Firebase:', mergeError);
+                        setBalanceSheetData(response);
+                    }
+                } else {
+                    // Replace mode
+                    setBalanceSheetData(response);
+                    try {
+                        await saveBalanceSheetToFirebase(file.name, response);
+                    } catch (saveError) {
+                        console.error('Failed to save to Firebase:', saveError);
+                    }
                 }
             } else {
                 setError(response.message || 'Failed to process balance sheet');
@@ -124,6 +138,59 @@ export function BalanceSheetUploader() {
                         </div>
                     )}
                 </div>
+
+                {/* Upload Mode Toggle */}
+                <div className="mt-4 flex items-center justify-center">
+                    <div className="inline-flex items-center bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setMergeMode(false); }}
+                            className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                                !mergeMode 
+                                    ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm' 
+                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                            }`}
+                        >
+                            <RefreshCw className="w-4 h-4 mr-1.5" />
+                            Replace
+                        </button>
+                        <button
+                            onClick={(e) => { e.stopPropagation(); setMergeMode(true); }}
+                            className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                                mergeMode 
+                                    ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm' 
+                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                            }`}
+                        >
+                            <Plus className="w-4 h-4 mr-1.5" />
+                            Add to Existing
+                        </button>
+                    </div>
+                </div>
+                <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-2">
+                    {mergeMode 
+                        ? 'Values will be added to existing items (same name+type summed together)' 
+                        : 'Uploading will replace your current balance sheet data'}
+                </p>
+
+                {/* Merge Notification */}
+                {mergeNotification && (
+                    <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="mt-4 p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg flex items-start space-x-3"
+                    >
+                        <CheckCircle2 className="w-5 h-5 text-emerald-500 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
+                        <div>
+                            <p className="font-medium text-emerald-700 dark:text-emerald-300">
+                                Successfully merged balance sheet
+                            </p>
+                            <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">
+                                Added {mergeNotification.newCount} new item{mergeNotification.newCount !== 1 ? 's' : ''}
+                                {mergeNotification.updatedCount ? `, updated ${mergeNotification.updatedCount} existing item${mergeNotification.updatedCount !== 1 ? 's' : ''}` : ''}
+                            </p>
+                        </div>
+                    </motion.div>
+                )}
 
                 {/* Error Display */}
                 {error && (

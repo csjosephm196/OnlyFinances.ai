@@ -11,8 +11,9 @@ interface SpendingPieChartProps {
 
 export function SpendingPieChart({ summary }: SpendingPieChartProps) {
     // Transform summary data for the pie chart, filtering out zero values
+    // Use Math.abs() to handle both positive (income) and negative (expense) amounts
     const chartData = Object.entries(summary)
-        .filter(([_, amount]) => amount > 0)
+        .filter(([_, amount]) => amount !== 0)
         .map(([category, amount]) => ({
             name: CATEGORY_DISPLAY[category as SpendingCategory]?.label || category,
             value: Math.abs(amount),

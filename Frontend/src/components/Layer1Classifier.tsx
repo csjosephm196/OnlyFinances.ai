@@ -1,10 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { Upload, CheckCircle2, ArrowRight, FileSpreadsheet, AlertCircle, XCircle } from 'lucide-react';
+import { Upload, CheckCircle2, ArrowRight, FileSpreadsheet, AlertCircle, XCircle, Plus, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
 import { uploadCSV } from '../services/budgetApi';
 import { ProcessingResult, SpendingCategory } from '../types/budget';
 import { CATEGORY_DISPLAY, getErrorMessage } from '../constants/categories';
-import { useBudget } from '../context/BudgetContext';
+import { useBudget, MergeResult } from '../context/BudgetContext';
 
 interface Layer1ClassifierProps {
   onNavigate?: (layer: string) => void;
@@ -14,8 +14,10 @@ export function Layer1Classifier({ onNavigate }: Layer1ClassifierProps = {}) {
   const [isDragOver, setIsDragOver] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [mergeMode, setMergeMode] = useState(true); // Default to merge mode
+  const [mergeNotification, setMergeNotification] = useState<MergeResult | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { processingResult, setProcessingResult, saveBudgetToFirebase, isSaving } = useBudget();
+  const { processingResult, setProcessingResult, saveBudgetToFirebase, mergeBudgetToFirebase, isSaving } = useBudget();
 
   const handleFileSelect = async (file: File) => {
     // Validate file type
@@ -32,18 +34,30 @@ export function Layer1Classifier({ onNavigate }: Layer1ClassifierProps = {}) {
 
     setProcessing(true);
     setError(null);
+    setMergeNotification(null);
 
     try {
       const response = await uploadCSV(file);
 
       if (response.success) {
-        setProcessingResult(response);
-        // Auto-save to Firebase - pass response data directly
-        try {
-          await saveBudgetToFirebase(file.name, response);
-        } catch (saveError) {
-          console.error('Failed to save to Firebase:', saveError);
-          // Don't show error to user - the processing succeeded
+        if (mergeMode && processingResult) {
+          // Merge with existing data
+          try {
+            const result = await mergeBudgetToFirebase(file.name, response);
+            setMergeNotification(result);
+          } catch (mergeError) {
+            console.error('Failed to merge to Firebase:', mergeError);
+            // Fall back to just updating local state
+            setProcessingResult(response);
+          }
+        } else {
+          // Replace mode - save as new
+          setProcessingResult(response);
+          try {
+            await saveBudgetToFirebase(file.name, response);
+          } catch (saveError) {
+            console.error('Failed to save to Firebase:', saveError);
+          }
         }
       } else {
         setError(getErrorMessage(response.error_code));
@@ -132,6 +146,59 @@ export function Layer1Classifier({ onNavigate }: Layer1ClassifierProps = {}) {
             </div>
           )}
         </div>
+
+        {/* Upload Mode Toggle */}
+        <div className="mt-4 flex items-center justify-center">
+          <div className="inline-flex items-center bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+            <button
+              onClick={(e) => { e.stopPropagation(); setMergeMode(false); }}
+              className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                !mergeMode 
+                  ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm' 
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+            >
+              <RefreshCw className="w-4 h-4 mr-1.5" />
+              Replace
+            </button>
+            <button
+              onClick={(e) => { e.stopPropagation(); setMergeMode(true); }}
+              className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
+                mergeMode 
+                  ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm' 
+                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+              }`}
+            >
+              <Plus className="w-4 h-4 mr-1.5" />
+              Add to Existing
+            </button>
+          </div>
+        </div>
+        <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-2">
+          {mergeMode 
+            ? 'New transactions will be added to your existing data (duplicates skipped)' 
+            : 'Uploading will replace your current transaction data'}
+        </p>
+
+        {/* Merge Notification */}
+        {mergeNotification && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mt-4 p-4 bg-emerald-50 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800 rounded-lg flex items-start space-x-3"
+          >
+            <CheckCircle2 className="w-5 h-5 text-emerald-500 dark:text-emerald-400 flex-shrink-0 mt-0.5" />
+            <div>
+              <p className="font-medium text-emerald-700 dark:text-emerald-300">
+                Successfully merged transactions
+              </p>
+              <p className="text-sm text-emerald-600 dark:text-emerald-400 mt-1">
+                Added {mergeNotification.newCount} new transaction{mergeNotification.newCount !== 1 ? 's' : ''}
+                {mergeNotification.skippedCount ? `, skipped ${mergeNotification.skippedCount} duplicate${mergeNotification.skippedCount !== 1 ? 's' : ''}` : ''}
+              </p>
+            </div>
+          </motion.div>
+        )}
 
         {/* Error Display */}
         {error && (
