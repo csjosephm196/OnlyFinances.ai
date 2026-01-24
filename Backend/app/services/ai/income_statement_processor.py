@@ -35,13 +35,14 @@ logger = logging.getLogger(__name__)
 # Common column name mappings for income statement formats
 DESCRIPTION_COLUMNS = [
     "description", "line item", "item", "account", "name",
-    "account name", "category", "details"
+    "account name", "category", "details", "sub-category", "subcategory"
 ]
 TYPE_COLUMNS = [
     "type", "account type", "classification", "class", "category"
 ]
 AMOUNT_COLUMNS = [
-    "amount", "value", "total", "balance", "debit", "credit"
+    "amount", "value", "total", "balance", "debit", "credit",
+    "actual", "budgeted", "actual amount", "budget amount"
 ]
 
 
