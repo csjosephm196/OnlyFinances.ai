@@ -274,27 +274,6 @@ export function Layer2Forecaster() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <InsightCard 
-          type="warning"
-          icon={AlertTriangle}
-          title="Liquidity Risk Detected"
-          desc="Large tax payment ($12k) due in 45 days. Current projection shows buffer dipping below 10% threshold."
-        />
-        <InsightCard 
-          type="success"
-          icon={TrendingUp}
-          title="Positive Momentum"
-          desc="MRR growth trending at +8% MoM. Outperforming baseline model by 2.3%."
-        />
-        <InsightCard 
-          type="info"
-          icon={ShieldCheck}
-          title="Safe to Spend"
-          desc="You can safely deploy up to $5,200 this month without impacting your 6-month runway."
-        />
-      </div>
-
       {/* Financial Calendar Section */}
       {processingResult && (
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl p-6">
@@ -473,6 +452,28 @@ export function Layer2Forecaster() {
           </div>
         </div>
       )}
+
+      {/* Insight Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <InsightCard 
+          type="warning"
+          icon={AlertTriangle}
+          title="Liquidity Risk Detected"
+          desc="Large tax payment ($12k) due in 45 days. Current projection shows buffer dipping below 10% threshold."
+        />
+        <InsightCard 
+          type="success"
+          icon={TrendingUp}
+          title="Positive Momentum"
+          desc="MRR growth trending at +8% MoM. Outperforming baseline model by 2.3%."
+        />
+        <InsightCard 
+          type="info"
+          icon={ShieldCheck}
+          title="Safe to Spend"
+          desc="You can safely deploy up to $5,200 this month without impacting your 6-month runway."
+        />
+      </div>
     </div>
   );
 }
