@@ -1,9 +1,19 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Sparkles, Activity, Check, ChevronDown, ChevronRight, RefreshCw, MessageSquare, Trash2, Volume2, VolumeX } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Activity, Check, ChevronDown, ChevronRight, RefreshCw, MessageSquare, Trash2, Volume2, VolumeX, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { sendMessage, isAdvisorError } from '../services/advisorApi';
 import { ChatMessage } from '../types/advisor';
 import { textToSpeech, playAudioWithControl, stopAudio } from '../services/ttsService';
+import { useAuth } from '../hooks/useAuth';
+import {
+  createConversation,
+  getConversations,
+  deleteConversation,
+  addMessage,
+  getMessages,
+  updateConversation,
+} from '../services/firestoreService';
+import { ConversationWithId } from '../types/firestoreTypes';
 
 export function Layer3Advisor() {
   const [query, setQuery] = useState('');
@@ -21,6 +31,9 @@ export function Layer3Advisor() {
   const [conversationHistory, setConversationHistory] = useState<ConversationSummary[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [displayedQuestions, setDisplayedQuestions] = useState<string[]>([]);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const { user } = useAuth();
   const [autoPlayEnabled, setAutoPlayEnabled] = useState<boolean>(false);
   const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
   const [playingMessageId, setPlayingMessageId] = useState<number | null>(null);
@@ -50,18 +63,18 @@ export function Layer3Advisor() {
   // Randomly select 4 questions when component mounts
   useEffect(() => {
     // Generate a unique session ID for this page load
-    const currentPageLoadId = window.performance?.navigation?.type === 1 
+    const currentPageLoadId = window.performance?.navigation?.type === 1
       ? Date.now().toString() // Page reload - generate new ID
       : sessionStorage.getItem('pageLoadId') || Date.now().toString();
-    
+
     // Store the page load ID if it's new
     if (!sessionStorage.getItem('pageLoadId')) {
       sessionStorage.setItem('pageLoadId', currentPageLoadId);
     }
-    
+
     const storedData = sessionStorage.getItem('advisorQuestions');
     const storedPageLoadId = sessionStorage.getItem('questionPageLoadId');
-    
+
     // If page was reloaded or no stored data, generate new questions
     if (!storedData || storedPageLoadId !== currentPageLoadId) {
       const shuffled = [...questionPool].sort(() => Math.random() - 0.5);
@@ -74,6 +87,32 @@ export function Layer3Advisor() {
       setDisplayedQuestions(JSON.parse(storedData));
     }
   }, []);
+
+  // Load conversation history from Firebase when user is authenticated
+  useEffect(() => {
+    if (user) {
+      loadConversationHistory();
+    }
+  }, [user]);
+
+  const loadConversationHistory = async () => {
+    if (!user) return;
+    setIsLoadingHistory(true);
+    try {
+      const conversations = await getConversations(user.uid, 50);
+      setConversationHistory(conversations.map((conv) => ({
+        id: conv.id,
+        title: conv.title,
+        messageCount: conv.messageCount,
+        createdAt: conv.createdAt.toDate(),
+        updatedAt: conv.updatedAt.toDate(),
+      })));
+    } catch (err) {
+      console.error('Failed to load conversation history:', err);
+    } finally {
+      setIsLoadingHistory(false);
+    }
+  };
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -113,14 +152,14 @@ export function Layer3Advisor() {
       if (messageId !== undefined) {
         setPlayingMessageId(messageId);
       }
-      
+
       console.log('Calling TTS with API key:', apiKey.substring(0, 10) + '...');
       const blob = await textToSpeech(text, apiKey);
       console.log('TTS blob received, size:', blob.size);
-      
+
       const { audio, promise } = playAudioWithControl(blob);
       currentAudioRef.current = audio;
-      
+
       await promise;
       console.log('Audio playback completed');
     } catch (error: any) {
@@ -174,7 +213,12 @@ export function Layer3Advisor() {
         text: response.message,
         isFinancial: response.is_financial,
       }]);
-      
+
+      // Save conversation to Firebase
+      if (user) {
+        saveToFirebase(text, response.message, response.is_financial, response.suggestions);
+      }
+
       // Auto-play TTS if enabled
       if (autoPlayEnabled) {
         speakMessage(response.message, botMessageId);
@@ -186,9 +230,42 @@ export function Layer3Advisor() {
     setError(null);
   };
 
+  // Save message exchange to Firebase
+  const saveToFirebase = async (
+    userMessage: string,
+    assistantMessage: string,
+    isFinancial?: boolean,
+    suggestions?: string[]
+  ) => {
+    if (!user) return;
+    setIsSaving(true);
+    try {
+      let convId = currentConversationId;
+
+      // Create new conversation if needed
+      if (!convId) {
+        const title = userMessage.length > 50 ? userMessage.substring(0, 50) + '...' : userMessage;
+        convId = await createConversation(user.uid, title, sessionId);
+        setCurrentConversationId(convId);
+      }
+
+      // Add user message
+      await addMessage(convId, 'user', userMessage);
+
+      // Add assistant message
+      await addMessage(convId, 'assistant', assistantMessage, isFinancial, suggestions);
+
+      // Refresh conversation history
+      await loadConversationHistory();
+    } catch (err) {
+      console.error('Failed to save to Firebase:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // Start a new conversation
   const handleNewConversation = () => {
-    // TODO: Save current conversation to Firebase before starting new
     setMessages([{
       id: 1,
       type: 'bot',
@@ -201,21 +278,50 @@ export function Layer3Advisor() {
 
   // Load a conversation from history
   const handleLoadConversation = async (conversationId: string) => {
-    // TODO: Fetch conversation messages from Firebase
-    // For now, just set the current conversation ID
-    setCurrentConversationId(conversationId);
-    // When Firebase is ready, load messages here:
-    // const messages = await getConversationMessages(conversationId);
-    // setMessages(messages);
+    try {
+      setIsLoadingHistory(true);
+      const msgs = await getMessages(conversationId);
+
+      // Convert Firebase messages to component format
+      const loadedMessages = msgs.map((msg, index) => ({
+        id: index + 1,
+        type: msg.role === 'user' ? 'user' : 'bot',
+        text: msg.content,
+        isFinancial: msg.isFinancial,
+      }));
+
+      // Add initial greeting if no messages
+      if (loadedMessages.length === 0) {
+        loadedMessages.push({
+          id: 1,
+          type: 'bot',
+          text: "Hello! I'm your AI Financial Advisor. Ask me about investing, budgeting, retirement planning, debt management, or any other financial topic.",
+          isFinancial: undefined,
+        });
+      }
+
+      setMessages(loadedMessages);
+      setCurrentConversationId(conversationId);
+      setSuggestions([]);
+    } catch (err) {
+      console.error('Failed to load conversation:', err);
+      setError('Failed to load conversation');
+    } finally {
+      setIsLoadingHistory(false);
+    }
   };
 
   // Delete a conversation from history
   const handleDeleteConversation = async (conversationId: string) => {
-    // TODO: Delete from Firebase
-    // await deleteConversation(conversationId);
-    setConversationHistory(prev => prev.filter(c => c.id !== conversationId));
-    if (currentConversationId === conversationId) {
-      handleNewConversation();
+    try {
+      await deleteConversation(conversationId);
+      setConversationHistory(prev => prev.filter(c => c.id !== conversationId));
+      if (currentConversationId === conversationId) {
+        handleNewConversation();
+      }
+    } catch (err) {
+      console.error('Failed to delete conversation:', err);
+      setError('Failed to delete conversation');
     }
   };
 
@@ -371,11 +477,10 @@ export function Layer3Advisor() {
             <div className="absolute right-2 top-2 flex items-center gap-2">
               <button
                 onClick={() => setAutoPlayEnabled(!autoPlayEnabled)}
-                className={`p-2 rounded-lg transition-colors ${
-                  autoPlayEnabled
-                    ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
-                    : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
-                }`}
+                className={`p-2 rounded-lg transition-colors ${autoPlayEnabled
+                  ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                  : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
+                  }`}
                 title={autoPlayEnabled ? 'Disable auto-play' : 'Enable auto-play'}
               >
                 {autoPlayEnabled ? (

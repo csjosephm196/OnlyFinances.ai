@@ -11,7 +11,7 @@ export function Layer1Classifier() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const { processingResult, setProcessingResult } = useBudget();
+  const { processingResult, setProcessingResult, saveToFirebase, isSaving } = useBudget();
 
   const handleFileSelect = async (file: File) => {
     // Validate file type
@@ -34,6 +34,13 @@ export function Layer1Classifier() {
 
       if (response.success) {
         setProcessingResult(response);
+        // Auto-save to Firebase
+        try {
+          await saveToFirebase(file.name, 'budget');
+        } catch (saveError) {
+          console.error('Failed to save to Firebase:', saveError);
+          // Don't show error to user - the processing succeeded
+        }
       } else {
         setError(getErrorMessage(response.error_code));
       }
@@ -194,8 +201,8 @@ export function Layer1Classifier() {
                     </td>
                     <td className="px-6 py-4 text-center">
                       <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${transaction.confidence >= 0.9 ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' :
-                          transaction.confidence >= 0.7 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' :
-                            'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
+                        transaction.confidence >= 0.7 ? 'bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400' :
+                          'bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300'
                         }`}>
                         {(transaction.confidence * 100).toFixed(0)}%
                       </span>
