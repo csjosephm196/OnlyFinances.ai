@@ -1,8 +1,148 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { TrendingUp, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { TrendingUp, AlertTriangle, ShieldCheck, Calendar as CalendarIcon, DollarSign, ArrowDown, ArrowUp } from 'lucide-react';
+import { Calendar } from './ui/calendar';
+import { useBudget } from '../context/BudgetContext';
+import { CategorizedTransaction } from '../types/budget';
 
 export function Layer2Forecaster() {
+  const { processingResult, incomeStatementData } = useBudget();
+  const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
+
+  // Process transactions by date
+  const transactionsByDate = useMemo(() => {
+    if (!processingResult?.transactions) return new Map<string, CategorizedTransaction[]>();
+    
+    const map = new Map<string, CategorizedTransaction[]>();
+    processingResult.transactions.forEach(transaction => {
+      const dateKey = transaction.date;
+      if (!map.has(dateKey)) {
+        map.set(dateKey, []);
+      }
+      map.get(dateKey)!.push(transaction);
+    });
+    return map;
+  }, [processingResult]);
+
+  // Calculate daily totals (expenses and revenues)
+  const dailyTotals = useMemo(() => {
+    const totals = new Map<string, { expenses: number; revenues: number; transactions: CategorizedTransaction[] }>();
+    
+    transactionsByDate.forEach((transactions, date) => {
+      let expenses = 0;
+      let revenues = 0;
+      
+      transactions.forEach(t => {
+        if (t.amount < 0) {
+          expenses += Math.abs(t.amount);
+        } else {
+          revenues += t.amount;
+        }
+      });
+      
+      totals.set(date, { expenses, revenues, transactions });
+    });
+    
+    return totals;
+  }, [transactionsByDate]);
+
+  // Generate future projections (next 90 days)
+  const futureProjections = useMemo(() => {
+    const projections = new Map<string, { projectedRevenue: number; projectedExpense: number }>();
+    const today = new Date();
+    
+    // Calculate average daily revenue and expense from historical data
+    let totalRevenue = 0;
+    let totalExpense = 0;
+    let dayCount = 0;
+    
+    dailyTotals.forEach(({ expenses, revenues }) => {
+      totalRevenue += revenues;
+      totalExpense += expenses;
+      dayCount++;
+    });
+    
+    const avgDailyRevenue = dayCount > 0 ? totalRevenue / dayCount : 0;
+    const avgDailyExpense = dayCount > 0 ? totalExpense / dayCount : 0;
+    
+    // Generate projections for next 90 days
+    for (let i = 1; i <= 90; i++) {
+      const futureDate = new Date(today);
+      futureDate.setDate(today.getDate() + i);
+      const dateKey = futureDate.toISOString().split('T')[0];
+      
+      // Add some variance to projections (±20%)
+      const variance = 0.8 + Math.random() * 0.4;
+      projections.set(dateKey, {
+        projectedRevenue: avgDailyRevenue * variance,
+        projectedExpense: avgDailyExpense * variance,
+      });
+    }
+    
+    return projections;
+  }, [dailyTotals]);
+
+  // Get date range from processing result
+  const dateRange = processingResult?.date_range;
+  const startDate = dateRange ? new Date(dateRange.start) : null;
+  const endDate = dateRange ? new Date(dateRange.end) : null;
+
+  // Get selected date details
+  const selectedDateDetails = useMemo(() => {
+    if (!selectedDate) return null;
+    const dateKey = selectedDate.toISOString().split('T')[0];
+    
+    // Check historical data
+    const historical = dailyTotals.get(dateKey);
+    if (historical) {
+      return {
+        type: 'historical' as const,
+        ...historical,
+      };
+    }
+    
+    // Check future projections
+    const projection = futureProjections.get(dateKey);
+    if (projection) {
+      return {
+        type: 'projected' as const,
+        expenses: projection.projectedExpense,
+        revenues: projection.projectedRevenue,
+        transactions: [],
+      };
+    }
+    
+    return null;
+  }, [selectedDate, dailyTotals, futureProjections]);
+
+  // Calendar modifiers for styling dates with transactions
+  const modifiers = useMemo(() => {
+    const mods: Record<string, Date[]> = {
+      hasExpenses: [],
+      hasRevenues: [],
+      hasBoth: [],
+      projected: [],
+    };
+    
+    dailyTotals.forEach(({ expenses, revenues }, dateKey) => {
+      const date = new Date(dateKey);
+      if (expenses > 0 && revenues > 0) {
+        mods.hasBoth.push(date);
+      } else if (expenses > 0) {
+        mods.hasExpenses.push(date);
+      } else if (revenues > 0) {
+        mods.hasRevenues.push(date);
+      }
+    });
+    
+    futureProjections.forEach((_, dateKey) => {
+      mods.projected.push(new Date(dateKey));
+    });
+    
+    return mods;
+  }, [dailyTotals, futureProjections]);
+
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-end justify-between">
@@ -121,6 +261,155 @@ export function Layer2Forecaster() {
           desc="You can safely deploy up to $5,200 this month without impacting your 6-month runway."
         />
       </div>
+
+      {/* Financial Calendar Section */}
+      {processingResult && (
+        <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center space-x-2">
+              <CalendarIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Financial Calendar</h3>
+            </div>
+            {dateRange && (
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                {new Date(dateRange.start).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} - {new Date(dateRange.end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+              </p>
+            )}
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Calendar */}
+            <div className="lg:col-span-2">
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                month={currentMonth}
+                onMonthChange={setCurrentMonth}
+                className="rounded-lg border border-slate-200 dark:border-slate-700"
+                modifiers={modifiers}
+                modifiersClassNames={{
+                  hasExpenses: "bg-rose-100 dark:bg-rose-900/30 text-rose-900 dark:text-rose-100 font-medium",
+                  hasRevenues: "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-900 dark:text-emerald-100 font-medium",
+                  hasBoth: "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-900 dark:text-indigo-100 font-semibold ring-2 ring-indigo-400 dark:ring-indigo-600",
+                  projected: "border-2 border-dashed border-slate-300 dark:border-slate-600",
+                }}
+                disabled={(date) => {
+                  // Disable dates outside the range (past start date - 30 days to end date + 90 days)
+                  if (!startDate || !endDate) return false;
+                  const minDate = new Date(startDate);
+                  minDate.setDate(minDate.getDate() - 30);
+                  const maxDate = new Date(endDate);
+                  maxDate.setDate(maxDate.getDate() + 90);
+                  return date < minDate || date > maxDate;
+                }}
+              />
+              
+              {/* Legend */}
+              <div className="mt-4 flex flex-wrap gap-4 text-xs">
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 rounded bg-rose-100 dark:bg-rose-900/30 border border-rose-300 dark:border-rose-700"></div>
+                  <span className="text-slate-600 dark:text-slate-400">Expenses Only</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 rounded bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-300 dark:border-emerald-700"></div>
+                  <span className="text-slate-600 dark:text-slate-400">Revenues Only</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 rounded bg-indigo-100 dark:bg-indigo-900/30 border-2 border-indigo-400 dark:border-indigo-600"></div>
+                  <span className="text-slate-600 dark:text-slate-400">Both</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 rounded border-2 border-dashed border-slate-300 dark:border-slate-600"></div>
+                  <span className="text-slate-600 dark:text-slate-400">Projected</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Date Details Panel */}
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-200 dark:border-slate-700">
+                <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center">
+                  <DollarSign className="w-4 h-4 mr-2" />
+                  {selectedDateDetails?.type === 'projected' ? 'Projected' : 'Historical'} Details
+                </h4>
+                {selectedDate && selectedDateDetails ? (
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Date</p>
+                      <p className="text-sm font-medium text-slate-900 dark:text-slate-100">
+                        {selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+                      </p>
+                    </div>
+                    
+                    {selectedDateDetails.revenues > 0 && (
+                      <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-slate-600 dark:text-slate-400 flex items-center">
+                            <ArrowUp className="w-3 h-3 mr-1 text-emerald-600 dark:text-emerald-400" />
+                            {selectedDateDetails.type === 'projected' ? 'Projected Revenue' : 'Revenue'}
+                          </span>
+                          <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                            ${selectedDateDetails.revenues.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {selectedDateDetails.expenses > 0 && (
+                      <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-xs text-slate-600 dark:text-slate-400 flex items-center">
+                            <ArrowDown className="w-3 h-3 mr-1 text-rose-600 dark:text-rose-400" />
+                            {selectedDateDetails.type === 'projected' ? 'Projected Expense' : 'Expense'}
+                          </span>
+                          <span className="text-sm font-semibold text-rose-600 dark:text-rose-400">
+                            ${selectedDateDetails.expenses.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                          </span>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {selectedDateDetails.type === 'historical' && selectedDateDetails.transactions.length > 0 && (
+                      <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Transactions ({selectedDateDetails.transactions.length})</p>
+                        <div className="space-y-1 max-h-32 overflow-y-auto">
+                          {selectedDateDetails.transactions.slice(0, 5).map((t, idx) => (
+                            <div key={idx} className="text-xs p-1.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+                              <p className="font-medium text-slate-900 dark:text-slate-100 truncate">{t.description}</p>
+                              <div className="flex justify-between items-center mt-0.5">
+                                <span className="text-slate-500 dark:text-slate-400">{t.category}</span>
+                                <span className={`font-semibold ${t.amount < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                  {t.amount < 0 ? '-' : '+'}${Math.abs(t.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                </span>
+                              </div>
+                            </div>
+                          ))}
+                          {selectedDateDetails.transactions.length > 5 && (
+                            <p className="text-xs text-slate-400 dark:text-slate-500 text-center">
+                              +{selectedDateDetails.transactions.length - 5} more
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                    
+                    {selectedDateDetails.type === 'projected' && (
+                      <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+                        <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+                          Based on historical averages with variance
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-slate-500 dark:text-slate-400">Select a date to view details</p>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
