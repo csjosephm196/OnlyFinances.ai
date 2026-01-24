@@ -117,6 +117,7 @@ export function Layer2Forecaster() {
   }, [selectedDate, dailyTotals, futureProjections]);
 
   // Calendar modifiers for styling dates with transactions
+  // Make sure dates are only in ONE category (mutually exclusive)
   const modifiers = useMemo(() => {
     const mods: Record<string, Date[]> = {
       hasExpenses: [],
@@ -125,19 +126,37 @@ export function Layer2Forecaster() {
       projected: [],
     };
     
+    // Track dates that have been categorized to avoid duplicates
+    const categorizedDates = new Set<string>();
+    
     dailyTotals.forEach(({ expenses, revenues }, dateKey) => {
       const date = new Date(dateKey);
+      const dateStr = dateKey;
+      
+      // Skip if already categorized
+      if (categorizedDates.has(dateStr)) return;
+      
+      // Categorize: check for BOTH first, then individual
       if (expenses > 0 && revenues > 0) {
         mods.hasBoth.push(date);
-      } else if (expenses > 0) {
+        categorizedDates.add(dateStr);
+      } else if (expenses > 0 && revenues === 0) {
+        // ONLY expenses, no revenues
         mods.hasExpenses.push(date);
-      } else if (revenues > 0) {
+        categorizedDates.add(dateStr);
+      } else if (revenues > 0 && expenses === 0) {
+        // ONLY revenues, no expenses
         mods.hasRevenues.push(date);
+        categorizedDates.add(dateStr);
       }
     });
     
     futureProjections.forEach((_, dateKey) => {
-      mods.projected.push(new Date(dateKey));
+      const date = new Date(dateKey);
+      // Only add if not already in historical data
+      if (!categorizedDates.has(dateKey)) {
+        mods.projected.push(date);
+      }
     });
     
     return mods;
@@ -373,23 +392,31 @@ export function Layer2Forecaster() {
                     {selectedDateDetails.type === 'historical' && selectedDateDetails.transactions.length > 0 && (
                       <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
                         <p className="text-xs text-slate-500 dark:text-slate-400 mb-2">Transactions ({selectedDateDetails.transactions.length})</p>
-                        <div className="space-y-1 max-h-32 overflow-y-auto">
-                          {selectedDateDetails.transactions.slice(0, 5).map((t, idx) => (
-                            <div key={idx} className="text-xs p-1.5 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                              <p className="font-medium text-slate-900 dark:text-slate-100 truncate">{t.description}</p>
-                              <div className="flex justify-between items-center mt-0.5">
-                                <span className="text-slate-500 dark:text-slate-400">{t.category}</span>
-                                <span className={`font-semibold ${t.amount < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                                  {t.amount < 0 ? '-' : '+'}${Math.abs(t.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
-                                </span>
+                        <div className="space-y-2 max-h-64 overflow-y-auto">
+                          {selectedDateDetails.transactions.map((t, idx) => (
+                            <div key={idx} className="text-xs p-2 rounded bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors">
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-slate-900 dark:text-slate-100 mb-1 break-words">
+                                    {t.description}
+                                  </p>
+                                  <div className="flex items-center justify-between mt-1">
+                                    <span className="text-slate-500 dark:text-slate-400 capitalize">
+                                      {t.category.replace(/_/g, ' ')}
+                                    </span>
+                                    <span className={`font-bold text-sm ml-2 ${t.amount < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                                      {t.amount < 0 ? '-' : '+'}${Math.abs(t.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                                    </span>
+                                  </div>
+                                  {t.original_category && t.original_category !== t.category && (
+                                    <p className="text-xs text-slate-400 dark:text-slate-500 mt-1 italic">
+                                      Originally: {t.original_category}
+                                    </p>
+                                  )}
+                                </div>
                               </div>
                             </div>
                           ))}
-                          {selectedDateDetails.transactions.length > 5 && (
-                            <p className="text-xs text-slate-400 dark:text-slate-500 text-center">
-                              +{selectedDateDetails.transactions.length - 5} more
-                            </p>
-                          )}
                         </div>
                       </div>
                     )}
