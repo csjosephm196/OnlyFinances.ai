@@ -104,24 +104,29 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
         className="flex flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm z-10"
       >
         <div className={`p-5 flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
-          <button 
-            className={`flex items-center group relative ${sidebarOpen ? 'space-x-3 flex-1' : ''}`}
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-          >
-            <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-500 dark:via-purple-500 dark:to-pink-500 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 flex-shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-indigo-500/50 group-hover:ring-2 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 group-hover:ring-offset-2 group-hover:ring-offset-white dark:group-hover:ring-offset-slate-800 relative cursor-pointer animate-gradient bg-[length:200%_200%]">
-              <Sparkles className="w-6 h-6 text-white transition-transform duration-200 group-hover:rotate-12" />
-              
-              {/* Visual indicator at bottom */}
-              <div className={`absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[10px] font-medium rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap ${!sidebarOpen ? 'group-hover:-bottom-3' : ''}`}>
-                {sidebarOpen ? '←' : '→'}
+          <div className={`flex items-center ${sidebarOpen ? 'space-x-3 flex-1' : ''}`}>
+            <button 
+              onClick={() => setSidebarOpen(!sidebarOpen)}
+              className="flex-shrink-0 group"
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-500 dark:via-purple-500 dark:to-pink-500 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 flex-shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-indigo-500/50 group-hover:ring-2 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 group-hover:ring-offset-2 group-hover:ring-offset-white dark:group-hover:ring-offset-slate-800 relative cursor-pointer animate-gradient bg-[length:200%_200%]">
+                <Sparkles className="w-6 h-6 text-white transition-transform duration-200 group-hover:rotate-12" />
+                
+                {/* Visual indicator at bottom */}
+                <div className={`absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[10px] font-medium rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap ${!sidebarOpen ? 'group-hover:-bottom-3' : ''}`}>
+                  {sidebarOpen ? '←' : '→'}
+                </div>
               </div>
-            </div>
+            </button>
             {sidebarOpen && (
-              <span className="font-bold text-xl tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap">
+              <button
+                onClick={() => setActiveLayer('dashboard')}
+                className="font-bold text-xl tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              >
                 SovereignCFO
-              </span>
+              </button>
             )}
-          </button>
+          </div>
         </div>
 
         <div className={`px-3 mb-6 ${!sidebarOpen && 'px-2'}`} ref={searchRef}>
