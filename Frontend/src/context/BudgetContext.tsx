@@ -97,8 +97,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
         setIncomeStatementData(null);
     };
 
-    // Auto-load history lists and restore latest transactions for Dashboard on login
-    // Note: Balance sheets and income statements are NOT auto-restored (Fiscal Core starts fresh)
+    // Auto-load history lists and restore latest transactions + income statement for Dashboard on login
     useEffect(() => {
         if (!user) {
             // Clear data when user logs out
@@ -109,7 +108,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
             return;
         }
 
-        const loadHistoryAndRestoreTransactions = async () => {
+        const loadHistoryAndRestoreData = async () => {
             setIsLoadingHistory(true);
             console.log('🔄 Loading history for user:', user.uid);
             try {
@@ -124,8 +123,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
                 setIncomeStatementHistoryList(incomeStatements);
                 console.log(`📊 Loaded: ${budgets.length} budgets, ${balanceSheets.length} balance sheets, ${incomeStatements.length} income statements`);
 
-                // Auto-restore ONLY the latest transactions for the Dashboard
-                // (Balance sheets and income statements stay fresh for Fiscal Core)
+                // Auto-restore the latest transactions for the Dashboard
                 if (budgets.length > 0) {
                     const latestBudget = budgets[0];
                     console.log('💰 Restoring latest transactions for Dashboard:', latestBudget.fileName);
@@ -141,7 +139,38 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
                     });
                 }
 
-                console.log('✅ History loaded, transactions restored for Dashboard');
+                // Auto-restore the latest income statement for the Dashboard
+                if (incomeStatements.length > 0) {
+                    const latestIncomeStatement = incomeStatements[0];
+                    console.log('📈 Restoring latest income statement for Dashboard:', latestIncomeStatement.fileName);
+                    const items = await getIncomeStatementItems(latestIncomeStatement.id);
+                    console.log(`   Fetched ${items.length} items`);
+
+                    // Filter items by type for revenues and expenses
+                    const revenueItems = items.filter(item => item.type === 'revenue');
+                    const expenseItems = items.filter(item => item.type === 'expense');
+
+                    setIncomeStatementData({
+                        success: true,
+                        period: latestIncomeStatement.period,
+                        total_items: latestIncomeStatement.totalItems,
+                        gross_profit: latestIncomeStatement.grossProfit,
+                        net_income: latestIncomeStatement.netIncome,
+                        revenues: {
+                            items: revenueItems,
+                            total: latestIncomeStatement.revenues.total,
+                            by_category: latestIncomeStatement.revenues.byCategory,
+                        },
+                        expenses: {
+                            items: expenseItems,
+                            total: latestIncomeStatement.expenses.total,
+                            by_category: latestIncomeStatement.expenses.byCategory,
+                        },
+                        items,
+                    });
+                }
+
+                console.log('✅ History loaded, data restored for Dashboard');
             } catch (err) {
                 console.error('Failed to load history:', err);
             } finally {
@@ -149,7 +178,7 @@ export function BudgetProvider({ children }: { children: ReactNode }) {
             }
         };
 
-        loadHistoryAndRestoreTransactions();
+        loadHistoryAndRestoreData();
     }, [user]); // Run when user changes (login/logout)
 
     // Save budget data to Firebase - accepts data directly

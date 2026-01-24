@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, Layers, BarChart3 } from 'lucide-react';
 import { Layer1Classifier } from './Layer1Classifier';
 import { BalanceSheetUploader } from './BalanceSheetUploader';
@@ -15,6 +15,7 @@ interface TabConfig {
 
 interface FiscalCoreProps {
     onNavigate?: (layer: string) => void;
+    defaultTab?: FiscalTab;
 }
 
 const TABS: TabConfig[] = [
@@ -23,8 +24,15 @@ const TABS: TabConfig[] = [
     { id: 'incomestatement', label: 'Income Statement', icon: BarChart3 },
 ];
 
-export function FiscalCore({ onNavigate }: FiscalCoreProps = {}) {
-    const [activeTab, setActiveTab] = useState<FiscalTab>('transactions');
+export function FiscalCore({ onNavigate, defaultTab }: FiscalCoreProps = {}) {
+    const [activeTab, setActiveTab] = useState<FiscalTab>(defaultTab || 'transactions');
+
+    // Update activeTab when defaultTab changes from parent navigation
+    useEffect(() => {
+        if (defaultTab) {
+            setActiveTab(defaultTab);
+        }
+    }, [defaultTab]);
 
     const getTabContent = () => {
         switch (activeTab) {
