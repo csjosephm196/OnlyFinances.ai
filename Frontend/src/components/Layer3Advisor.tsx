@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Bot, User, Sparkles, Activity, Check, ChevronDown, ChevronRight, RefreshCw, MessageSquare, Trash2 } from 'lucide-react';
+import { Send, Bot, User, Sparkles, Activity, Check, ChevronDown, ChevronRight, RefreshCw, MessageSquare, Trash2, Volume2, VolumeX } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { sendMessage, isAdvisorError } from '../services/advisorApi';
 import { ChatMessage } from '../types/advisor';
+import { textToSpeech, playAudioWithControl, stopAudio } from '../services/ttsService';
 
 export function Layer3Advisor() {
   const [query, setQuery] = useState('');
@@ -20,6 +21,10 @@ export function Layer3Advisor() {
   const [conversationHistory, setConversationHistory] = useState<ConversationSummary[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [displayedQuestions, setDisplayedQuestions] = useState<string[]>([]);
+  const [autoPlayEnabled, setAutoPlayEnabled] = useState<boolean>(false);
+  const [isPlayingAudio, setIsPlayingAudio] = useState<boolean>(false);
+  const [playingMessageId, setPlayingMessageId] = useState<number | null>(null);
+  const currentAudioRef = useRef<HTMLAudioElement | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   // Pool of 16 predefined starter questions
@@ -76,6 +81,13 @@ export function Layer3Advisor() {
     }
   }, [messages]);
 
+  // Cleanup audio on unmount
+  useEffect(() => {
+    return () => {
+      handleStopAudio();
+    };
+  }, []);
+
   // Convert messages to ChatMessage format for API
   const getConversationHistory = (): ChatMessage[] => {
     return messages
@@ -85,6 +97,49 @@ export function Layer3Advisor() {
         role: msg.type === 'user' ? 'user' : 'assistant',
         content: msg.text,
       })) as ChatMessage[];
+  };
+
+  // Speak a message using TTS
+  const speakMessage = async (text: string, messageId?: number) => {
+    const apiKey = import.meta.env.VITE_ELEVENLABS_API_KEY;
+    if (!apiKey) {
+      console.error('ElevenLabs API key not found');
+      setError('ElevenLabs API key not found. Please check your .env file.');
+      return;
+    }
+
+    try {
+      setIsPlayingAudio(true);
+      if (messageId !== undefined) {
+        setPlayingMessageId(messageId);
+      }
+      
+      console.log('Calling TTS with API key:', apiKey.substring(0, 10) + '...');
+      const blob = await textToSpeech(text, apiKey);
+      console.log('TTS blob received, size:', blob.size);
+      
+      const { audio, promise } = playAudioWithControl(blob);
+      currentAudioRef.current = audio;
+      
+      await promise;
+      console.log('Audio playback completed');
+    } catch (error: any) {
+      console.error('TTS error:', error);
+      const errorMessage = error?.message || 'Unknown error';
+      setError(`Failed to play audio: ${errorMessage}. Please check your API key and network connection.`);
+    } finally {
+      setIsPlayingAudio(false);
+      setPlayingMessageId(null);
+      currentAudioRef.current = null;
+    }
+  };
+
+  // Stop audio playback
+  const handleStopAudio = () => {
+    stopAudio();
+    setIsPlayingAudio(false);
+    setPlayingMessageId(null);
+    currentAudioRef.current = null;
   };
 
   const handleSend = async (messageText?: string) => {
@@ -110,14 +165,20 @@ export function Layer3Advisor() {
       // Remove the user message on error
       setMessages(prev => prev.slice(0, -1));
     } else {
+      const botMessageId = Date.now() + 1;
       setSessionId(response.session_id);
       setSuggestions(response.suggestions);
       setMessages(prev => [...prev, {
-        id: Date.now() + 1,
+        id: botMessageId,
         type: 'bot',
         text: response.message,
         isFinancial: response.is_financial,
       }]);
+      
+      // Auto-play TTS if enabled
+      if (autoPlayEnabled) {
+        speakMessage(response.message, botMessageId);
+      }
     }
   };
 
@@ -180,7 +241,28 @@ export function Layer3Advisor() {
                       ? 'bg-indigo-600 text-white rounded-tr-sm'
                       : 'bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-800 dark:text-slate-100 rounded-tl-sm'}
                   `}>
-                    {msg.text}
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="flex-1">{msg.text}</span>
+                      {msg.type === 'bot' && (
+                        <button
+                          onClick={() => {
+                            if (playingMessageId === msg.id && isPlayingAudio) {
+                              handleStopAudio();
+                            } else {
+                              speakMessage(msg.text, msg.id);
+                            }
+                          }}
+                          className="flex-shrink-0 p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-600 transition-colors"
+                          title={playingMessageId === msg.id && isPlayingAudio ? 'Stop audio' : 'Play audio'}
+                        >
+                          {playingMessageId === msg.id && isPlayingAudio ? (
+                            <VolumeX className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                          ) : (
+                            <Volume2 className="w-4 h-4 text-slate-500 dark:text-slate-400" />
+                          )}
+                        </button>
+                      )}
+                    </div>
                   </div>
 
                   {/* Reasoning Logs - Modern Accordion Style */}
@@ -283,20 +365,45 @@ export function Layer3Advisor() {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Ask about investing, budgeting, retirement..."
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-5 pr-14 py-3.5 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-5 pr-32 py-3.5 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
               disabled={isTyping}
             />
-            <button
-              onClick={() => handleSend()}
-              disabled={!query.trim() || isTyping}
-              className="absolute right-2 top-2 p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
-            >
-              <Send className="w-4 h-4" />
-            </button>
+            <div className="absolute right-2 top-2 flex items-center gap-2">
+              <button
+                onClick={() => setAutoPlayEnabled(!autoPlayEnabled)}
+                className={`p-2 rounded-lg transition-colors ${
+                  autoPlayEnabled
+                    ? 'bg-indigo-100 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-600'
+                }`}
+                title={autoPlayEnabled ? 'Disable auto-play' : 'Enable auto-play'}
+              >
+                {autoPlayEnabled ? (
+                  <Volume2 className="w-4 h-4" />
+                ) : (
+                  <VolumeX className="w-4 h-4" />
+                )}
+              </button>
+              <button
+                onClick={() => handleSend()}
+                disabled={!query.trim() || isTyping}
+                className="p-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-sm"
+              >
+                <Send className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-          <p className="text-center text-[10px] text-slate-400 dark:text-slate-500 mt-3">
-            AI can make mistakes. Please verify financial advice.
-          </p>
+          <div className="flex items-center justify-between mt-3">
+            <p className="text-center text-[10px] text-slate-400 dark:text-slate-500 flex-1">
+              AI can make mistakes. Please verify financial advice.
+            </p>
+            {autoPlayEnabled && (
+              <p className="text-[10px] text-indigo-600 dark:text-indigo-400 flex items-center gap-1">
+                <Volume2 className="w-3 h-3" />
+                Auto-play enabled
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
