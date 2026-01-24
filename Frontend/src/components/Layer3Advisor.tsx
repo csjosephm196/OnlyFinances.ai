@@ -19,7 +19,56 @@ export function Layer3Advisor() {
   const [error, setError] = useState<string | null>(null);
   const [conversationHistory, setConversationHistory] = useState<ConversationSummary[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [displayedQuestions, setDisplayedQuestions] = useState<string[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
+
+  // Pool of 16 predefined starter questions
+  const questionPool = [
+    "How can I reduce my spending in my highest expense categories?",
+    "What percentage of my income should I save each month?",
+    "Help me create a realistic budget based on my transaction history.",
+    "What investments should I consider with my current financial situation?",
+    "How can I improve my net worth over the next 6 months?",
+    "Should I pay off debt or invest my extra money?",
+    "What's the best strategy to build an emergency fund?",
+    "How much should I be contributing to retirement accounts?",
+    "Can you analyze my spending patterns and suggest improvements?",
+    "What are some tax-efficient investment strategies I should consider?",
+    "How can I balance paying off my mortgage with saving for retirement?",
+    "What's a good asset allocation for my age and financial goals?",
+    "How can I optimize my cash flow based on my income statement?",
+    "Should I prioritize increasing my assets or reducing my liabilities?",
+    "What are the risks in my current financial portfolio?",
+    "How can I prepare financially for major life events?",
+  ];
+
+  // Randomly select 4 questions when component mounts
+  useEffect(() => {
+    // Generate a unique session ID for this page load
+    const currentPageLoadId = window.performance?.navigation?.type === 1 
+      ? Date.now().toString() // Page reload - generate new ID
+      : sessionStorage.getItem('pageLoadId') || Date.now().toString();
+    
+    // Store the page load ID if it's new
+    if (!sessionStorage.getItem('pageLoadId')) {
+      sessionStorage.setItem('pageLoadId', currentPageLoadId);
+    }
+    
+    const storedData = sessionStorage.getItem('advisorQuestions');
+    const storedPageLoadId = sessionStorage.getItem('questionPageLoadId');
+    
+    // If page was reloaded or no stored data, generate new questions
+    if (!storedData || storedPageLoadId !== currentPageLoadId) {
+      const shuffled = [...questionPool].sort(() => Math.random() - 0.5);
+      const selected = shuffled.slice(0, 4);
+      setDisplayedQuestions(selected);
+      sessionStorage.setItem('advisorQuestions', JSON.stringify(selected));
+      sessionStorage.setItem('questionPageLoadId', currentPageLoadId);
+    } else {
+      // Use stored questions from same page session
+      setDisplayedQuestions(JSON.parse(storedData));
+    }
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -170,6 +219,32 @@ export function Layer3Advisor() {
             </div>
           )}
         </div>
+
+        {/* Starter Questions - Show when conversation is fresh */}
+        {messages.length <= 1 && !isTyping && displayedQuestions.length > 0 && (
+          <div className="p-4 border-t border-slate-100 dark:border-slate-700 bg-gradient-to-br from-indigo-50/50 to-purple-50/50 dark:from-indigo-950/20 dark:to-purple-950/20">
+            <div className="max-w-4xl mx-auto">
+              <p className="text-xs font-semibold text-slate-600 dark:text-slate-400 mb-3 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-indigo-600 dark:text-indigo-400" />
+                Suggested Questions
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                {displayedQuestions.map((question, i) => (
+                  <button
+                    key={i}
+                    onClick={() => handleSend(question)}
+                    className="text-left px-4 py-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-700 dark:text-slate-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/30 hover:border-indigo-300 dark:hover:border-indigo-700 transition-all shadow-sm hover:shadow-md group"
+                  >
+                    <span className="flex items-start gap-2">
+                      <MessageSquare className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 flex-shrink-0 mt-0.5 transition-colors" />
+                      <span className="flex-1">{question}</span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Suggestions */}
         {suggestions.length > 0 && !isTyping && (
