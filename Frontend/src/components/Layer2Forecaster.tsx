@@ -376,9 +376,11 @@ export function Layer2Forecaster() {
             </div>
           </div>
         ) : chartData.length > 0 ? (
-          <div className="h-[400px] w-full">
-            <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={chartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+          <div className="flex gap-6">
+            {/* Chart */}
+            <div className="h-[400px] flex-1 min-w-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <AreaChart data={chartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
                 <defs>
                   <linearGradient id="colorForecast" x1="0" y1="0" x2="0" y2="1">
                     <stop offset="5%" stopColor="#818cf8" stopOpacity={0.3} />
@@ -469,6 +471,60 @@ export function Layer2Forecaster() {
                 )}
               </AreaChart>
             </ResponsiveContainer>
+            </div>
+
+            {/* Scenario Legend */}
+            <div className="w-64 flex-shrink-0 space-y-4 pl-4 border-l border-slate-200 dark:border-slate-700">
+              <h4 className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Projection Scenarios</h4>
+              
+              {/* Actual Balance */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-0.5 bg-indigo-600 rounded"></div>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Actual Balance</span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Your historical balance based on real transactions up to today.
+                </p>
+              </div>
+
+              {/* Optimistic Case */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <svg className="w-6 h-2" viewBox="0 0 24 2">
+                    <line x1="0" y1="1" x2="24" y2="1" stroke="#a5b4fc" strokeWidth="2" strokeDasharray="4 3" />
+                  </svg>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Optimistic Case</span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Upper bound of the 95% confidence range—best-case if revenues trend high and expenses stay low.
+                </p>
+              </div>
+
+              {/* Projected Balance */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <div className="w-6 h-0.5 bg-indigo-400 rounded"></div>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Projected Balance</span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Expected balance based on your recurring income and expenses.
+                </p>
+              </div>
+
+              {/* Pessimistic Case */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <svg className="w-6 h-2" viewBox="0 0 24 2">
+                    <line x1="0" y1="1" x2="24" y2="1" stroke="#a5b4fc" strokeWidth="2" strokeDasharray="4 3" />
+                  </svg>
+                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Pessimistic Case</span>
+                </div>
+                <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Lower bound—worst-case if unexpected costs arise or income dips.
+                </p>
+              </div>
+            </div>
           </div>
         ) : (
           <div className="h-[400px] flex items-center justify-center">
