@@ -1,19 +1,158 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
-import { TrendingUp, AlertTriangle, ShieldCheck, Calendar as CalendarIcon, DollarSign, ArrowDown, ArrowUp } from 'lucide-react';
+import { TrendingUp, AlertTriangle, ShieldCheck, Calendar as CalendarIcon, DollarSign, ArrowDown, ArrowUp, RefreshCw, Loader2 } from 'lucide-react';
 import { Calendar } from './ui/calendar';
 import { useBudget } from '../context/BudgetContext';
 import { CategorizedTransaction } from '../types/budget';
+import { generateForecast, saveForecast, getLatestForecast, shouldRegenerateForecast } from '../services/forecastService';
+import { ForecastResult, ForecastInsight, ChartDataPoint, ForecastWithId } from '../types/forecastTypes';
+import { useAuth } from '../hooks/useAuth';
 
 export function Layer2Forecaster() {
-  const { processingResult, incomeStatementData } = useBudget();
+  const { processingResult, incomeStatementData, balanceSheetData } = useBudget();
+  const { user } = useAuth();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
   const [currentMonth, setCurrentMonth] = useState<Date>(new Date());
 
-  // Process transactions by date
+  // Forecast state
+  const [forecastResult, setForecastResult] = useState<ForecastResult | null>(null);
+  const [savedForecast, setSavedForecast] = useState<ForecastWithId | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Load saved forecast on mount
+  useEffect(() => {
+    if (user) {
+      loadSavedForecast();
+    }
+  }, [user]);
+
+  const loadSavedForecast = async () => {
+    if (!user) return;
+    try {
+      setIsLoading(true);
+      const forecast = await getLatestForecast(user.uid);
+      if (forecast) {
+        setSavedForecast(forecast);
+        // Convert saved forecast to ForecastResult format for display
+        setForecastResult({
+          success: true,
+          forecast_id: forecast.forecastId,
+          generated_at: forecast.generatedAt.toDate().toISOString(),
+          data_points: forecast.dataPoints,
+          metrics: forecast.metrics,
+          insights: forecast.insights,
+          confidence_level: forecast.confidenceLevel,
+          data_sources: forecast.dataSources,
+          historical_start: forecast.historicalStart,
+          historical_end: forecast.historicalEnd,
+          forecast_end: forecast.forecastEnd,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load saved forecast:', err);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Generate new forecast
+  const handleGenerateForecast = useCallback(async () => {
+    if (!processingResult?.transactions || processingResult.transactions.length === 0) {
+      setError('No transaction data available. Please upload a transactions CSV first.');
+      return;
+    }
+
+    try {
+      setIsGenerating(true);
+      setError(null);
+
+      // Calculate starting balance from transactions (ending balance from last transaction)
+      const sortedTransactions = [...processingResult.transactions].sort((a, b) =>
+        new Date(b.date).getTime() - new Date(a.date).getTime()
+      );
+
+      // Use balance sheet liquid assets if available, otherwise estimate from transactions
+      let currentBalance = 0;
+      if (balanceSheetData?.assets?.by_category?.cash) {
+        currentBalance = balanceSheetData.assets.by_category.cash;
+      } else {
+        // Estimate: sum of all transactions as a rough running balance
+        currentBalance = processingResult.transactions.reduce((sum, t) => sum + t.amount, 0);
+      }
+
+      const result = await generateForecast(
+        processingResult.transactions,
+        incomeStatementData,
+        balanceSheetData,
+        Math.max(currentBalance, 0)
+      );
+
+      setForecastResult(result);
+
+      // Save to Firebase if user is logged in
+      if (user && result.success) {
+        await saveForecast(user.uid, result, processingResult.transactions.length);
+        await loadSavedForecast(); // Reload to get the saved version
+      }
+    } catch (err) {
+      console.error('Forecast generation failed:', err);
+      setError(err instanceof Error ? err.message : 'Failed to generate forecast');
+    } finally {
+      setIsGenerating(false);
+    }
+  }, [processingResult, incomeStatementData, balanceSheetData, user]);
+
+  // Check if we should auto-generate forecast
+  useEffect(() => {
+    if (processingResult?.transactions &&
+      processingResult.transactions.length > 0 &&
+      !forecastResult &&
+      !isLoading &&
+      !isGenerating) {
+      // Check if saved forecast needs regeneration
+      const needsRegeneration = shouldRegenerateForecast(
+        savedForecast,
+        processingResult.transactions.length,
+        processingResult.date_range
+      );
+
+      if (needsRegeneration) {
+        handleGenerateForecast();
+      }
+    }
+  }, [processingResult, savedForecast, forecastResult, isLoading, isGenerating]);
+
+  // Transform forecast data for chart
+  const chartData = useMemo<ChartDataPoint[]>(() => {
+    if (!forecastResult?.data_points) return [];
+
+    // Sample every few days for cleaner chart display
+    const samplingInterval = Math.max(1, Math.floor(forecastResult.data_points.length / 30));
+
+    return forecastResult.data_points
+      .filter((_, idx) => idx % samplingInterval === 0 || idx === forecastResult.data_points.length - 1)
+      .map(point => ({
+        date: new Date(point.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        actual: point.actual ?? undefined,
+        predicted: point.predicted ?? undefined,
+        upperBound: point.upper_bound ?? undefined,
+        lowerBound: point.lower_bound ?? undefined,
+      }));
+  }, [forecastResult]);
+
+  // Find today's reference line position
+  const todayLabel = useMemo(() => {
+    if (!forecastResult) return null;
+    const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    return chartData.find(d => d.date === today)?.date || chartData.find(d => d.actual === undefined && d.predicted)?.date;
+  }, [forecastResult, chartData]);
+
+  // Process transactions by date for calendar
   const transactionsByDate = useMemo(() => {
     if (!processingResult?.transactions) return new Map<string, CategorizedTransaction[]>();
-    
+
     const map = new Map<string, CategorizedTransaction[]>();
     processingResult.transactions.forEach(transaction => {
       const dateKey = transaction.date;
@@ -28,11 +167,11 @@ export function Layer2Forecaster() {
   // Calculate daily totals (expenses and revenues)
   const dailyTotals = useMemo(() => {
     const totals = new Map<string, { expenses: number; revenues: number; transactions: CategorizedTransaction[] }>();
-    
+
     transactionsByDate.forEach((transactions, date) => {
       let expenses = 0;
       let revenues = 0;
-      
+
       transactions.forEach(t => {
         if (t.amount < 0) {
           expenses += Math.abs(t.amount);
@@ -40,48 +179,31 @@ export function Layer2Forecaster() {
           revenues += t.amount;
         }
       });
-      
+
       totals.set(date, { expenses, revenues, transactions });
     });
-    
+
     return totals;
   }, [transactionsByDate]);
 
-  // Generate future projections (next 90 days)
+  // Generate future projections from forecast result
   const futureProjections = useMemo(() => {
     const projections = new Map<string, { projectedRevenue: number; projectedExpense: number }>();
-    const today = new Date();
-    
-    // Calculate average daily revenue and expense from historical data
-    let totalRevenue = 0;
-    let totalExpense = 0;
-    let dayCount = 0;
-    
-    dailyTotals.forEach(({ expenses, revenues }) => {
-      totalRevenue += revenues;
-      totalExpense += expenses;
-      dayCount++;
+
+    if (!forecastResult?.data_points) return projections;
+
+    forecastResult.data_points.forEach(point => {
+      if (point.predicted !== null) {
+        // Estimate revenue/expense from projected balance change
+        projections.set(point.date, {
+          projectedRevenue: forecastResult.metrics.avg_daily_revenue,
+          projectedExpense: forecastResult.metrics.avg_daily_expense,
+        });
+      }
     });
-    
-    const avgDailyRevenue = dayCount > 0 ? totalRevenue / dayCount : 0;
-    const avgDailyExpense = dayCount > 0 ? totalExpense / dayCount : 0;
-    
-    // Generate projections for next 90 days
-    for (let i = 1; i <= 90; i++) {
-      const futureDate = new Date(today);
-      futureDate.setDate(today.getDate() + i);
-      const dateKey = futureDate.toISOString().split('T')[0];
-      
-      // Add some variance to projections (±20%)
-      const variance = 0.8 + Math.random() * 0.4;
-      projections.set(dateKey, {
-        projectedRevenue: avgDailyRevenue * variance,
-        projectedExpense: avgDailyExpense * variance,
-      });
-    }
-    
+
     return projections;
-  }, [dailyTotals]);
+  }, [forecastResult]);
 
   // Get date range from processing result
   const dateRange = processingResult?.date_range;
@@ -92,7 +214,7 @@ export function Layer2Forecaster() {
   const selectedDateDetails = useMemo(() => {
     if (!selectedDate) return null;
     const dateKey = selectedDate.toISOString().split('T')[0];
-    
+
     // Check historical data
     const historical = dailyTotals.get(dateKey);
     if (historical) {
@@ -101,7 +223,7 @@ export function Layer2Forecaster() {
         ...historical,
       };
     }
-    
+
     // Check future projections
     const projection = futureProjections.get(dateKey);
     if (projection) {
@@ -112,12 +234,11 @@ export function Layer2Forecaster() {
         transactions: [],
       };
     }
-    
+
     return null;
   }, [selectedDate, dailyTotals, futureProjections]);
 
   // Calendar modifiers for styling dates with transactions
-  // Make sure dates are only in ONE category (mutually exclusive)
   const modifiers = useMemo(() => {
     const mods: Record<string, Date[]> = {
       hasExpenses: [],
@@ -125,153 +246,226 @@ export function Layer2Forecaster() {
       hasBoth: [],
       projected: [],
     };
-    
-    // Helper to create a date at midnight local time (to match calendar behavior)
+
     const createDateAtMidnight = (dateStr: string): Date => {
       const [year, month, day] = dateStr.split('-').map(Number);
       return new Date(year, month - 1, day);
     };
-    
-    // Track dates that have been categorized to avoid duplicates
+
     const categorizedDates = new Set<string>();
-    
+
     dailyTotals.forEach(({ expenses, revenues }, dateKey) => {
-      // Skip if already categorized
       if (categorizedDates.has(dateKey)) return;
-      
-      // Create date at midnight local time
+
       const date = createDateAtMidnight(dateKey);
-      
-      // Categorize: check for BOTH first, then individual
-      // Use threshold to avoid floating point issues (0.01 = 1 cent)
       const EXPENSE_THRESHOLD = 0.01;
       const REVENUE_THRESHOLD = 0.01;
-      
+
       const hasExpenses = expenses >= EXPENSE_THRESHOLD;
       const hasRevenues = revenues >= REVENUE_THRESHOLD;
-      
+
       if (hasExpenses && hasRevenues) {
-        // Has BOTH expenses and revenues
         mods.hasBoth.push(date);
         categorizedDates.add(dateKey);
       } else if (hasExpenses) {
-        // ONLY expenses (revenues are below threshold or zero)
         mods.hasExpenses.push(date);
         categorizedDates.add(dateKey);
       } else if (hasRevenues) {
-        // ONLY revenues (expenses are below threshold or zero)
         mods.hasRevenues.push(date);
         categorizedDates.add(dateKey);
       }
     });
-    
+
     futureProjections.forEach((_, dateKey) => {
-      // Only add if not already in historical data
       if (!categorizedDates.has(dateKey)) {
         const date = createDateAtMidnight(dateKey);
         mods.projected.push(date);
       }
     });
-    
+
     return mods;
   }, [dailyTotals, futureProjections]);
+
+  // Get metrics from forecast or use defaults
+  const metrics = forecastResult?.metrics ?? {
+    runway_months: 0,
+    safety_buffer: 0,
+    avg_daily_revenue: 0,
+    avg_daily_expense: 0,
+    avg_daily_net: 0,
+    projected_end_balance: 0,
+    current_balance: 0,
+  };
+
+  // Get insights from forecast or empty array
+  const insights = forecastResult?.insights ?? [];
 
   return (
     <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
       <div className="flex items-end justify-between">
         <div>
           <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Cash Flow Projection</h2>
-          <p className="text-slate-500 dark:text-slate-400 mt-1">90-Day probabilistic forecast model with 95% confidence interval.</p>
+          <p className="text-slate-500 dark:text-slate-400 mt-1">
+            {forecastResult
+              ? `90-Day probabilistic forecast with ${Math.round((forecastResult.confidence_level || 0.95) * 100)}% confidence interval.`
+              : 'Upload transaction data to generate forecast.'}
+          </p>
         </div>
-        <div className="flex items-center space-x-6 bg-white dark:bg-slate-800 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
-          <div className="text-right">
-            <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Runway</p>
-            <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">14.2 Months</p>
-          </div>
-          <div className="w-px h-8 bg-slate-200 dark:bg-slate-700" />
-          <div className="text-right">
-            <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Safety Buffer</p>
-            <p className="text-lg font-bold text-slate-900 dark:text-slate-100">$24,500</p>
+        <div className="flex items-center gap-4">
+          {/* Regenerate Button */}
+          {processingResult?.transactions && (
+            <button
+              onClick={handleGenerateForecast}
+              disabled={isGenerating}
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors disabled:opacity-50"
+            >
+              {isGenerating ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )}
+              {isGenerating ? 'Generating...' : 'Regenerate'}
+            </button>
+          )}
+
+          {/* Metrics Summary */}
+          <div className="flex items-center space-x-6 bg-white dark:bg-slate-800 px-4 py-2 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+            <div className="text-right">
+              <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Runway</p>
+              <p className={`text-lg font-bold ${metrics.runway_months >= 6 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
+                {metrics.runway_months > 0 ? `${metrics.runway_months.toFixed(1)} Months` : '--'}
+              </p>
+            </div>
+            <div className="w-px h-8 bg-slate-200 dark:bg-slate-700" />
+            <div className="text-right">
+              <p className="text-xs font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wide">Safety Buffer</p>
+              <p className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                {metrics.safety_buffer > 0 ? `$${metrics.safety_buffer.toLocaleString()}` : '--'}
+              </p>
+            </div>
           </div>
         </div>
       </div>
 
-      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl p-6">
-        <div className="h-[400px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart data={data} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
-              <defs>
-                <linearGradient id="colorForecast" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#818cf8" stopOpacity={0.3}/>
-                  <stop offset="95%" stopColor="#818cf8" stopOpacity={0}/>
-                </linearGradient>
-                <linearGradient id="colorHistorical" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.5}/>
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-              <XAxis 
-                dataKey="date" 
-                stroke="#94a3b8" 
-                fontSize={12} 
-                tickMargin={15}
-                axisLine={false}
-                tickLine={false}
-              />
-              <YAxis 
-                stroke="#94a3b8" 
-                fontSize={12} 
-                tickFormatter={(value) => `$${value/1000}k`}
-                axisLine={false}
-                tickLine={false}
-              />
-              <Tooltip 
-                contentStyle={{ 
-                  backgroundColor: '#ffffff', 
-                  borderColor: '#e2e8f0', 
-                  color: '#1e293b',
-                  borderRadius: '12px',
-                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
-                  padding: '12px'
-                }}
-                itemStyle={{ color: '#475569', fontSize: '13px', fontWeight: 500 }}
-                formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
-                cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }}
-              />
-              
-              {/* Historical Data */}
-              <Area 
-                type="monotone" 
-                dataKey="actual" 
-                stroke="#4f46e5" 
-                strokeWidth={3}
-                fill="url(#colorHistorical)" 
-                name="Actual Balance"
-              />
-
-              {/* Forecast Cone */}
-              <Area 
-                type="monotone" 
-                dataKey="upperBound" 
-                stroke="#a5b4fc" 
-                strokeDasharray="5 5"
-                fill="url(#colorForecast)" 
-                name="Optimistic Case"
-              />
-              <Area 
-                type="monotone" 
-                dataKey="lowerBound" 
-                stroke="#a5b4fc"
-                strokeDasharray="5 5"
-                fill="transparent" 
-                name="Pessimistic Case"
-              />
-
-              <ReferenceLine x="Nov 01" stroke="#ef4444" strokeDasharray="3 3" label={{ position: 'top', value: 'Today', fill: '#ef4444', fontSize: 12, fontWeight: 600 }} />
-            </AreaChart>
-          </ResponsiveContainer>
+      {/* Error Message */}
+      {error && (
+        <div className="p-4 bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800 rounded-xl">
+          <p className="text-sm text-rose-700 dark:text-rose-300">{error}</p>
         </div>
+      )}
+
+      {/* Chart */}
+      <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl p-6">
+        {isLoading || isGenerating ? (
+          <div className="h-[400px] flex items-center justify-center">
+            <div className="text-center">
+              <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-2" />
+              <p className="text-sm text-slate-500">{isGenerating ? 'Generating forecast...' : 'Loading...'}</p>
+            </div>
+          </div>
+        ) : chartData.length > 0 ? (
+          <div className="h-[400px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData} margin={{ top: 10, right: 0, left: 0, bottom: 0 }}>
+                <defs>
+                  <linearGradient id="colorForecast" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#818cf8" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
+                  </linearGradient>
+                  <linearGradient id="colorHistorical" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.5} />
+                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                <XAxis
+                  dataKey="date"
+                  stroke="#94a3b8"
+                  fontSize={12}
+                  tickMargin={15}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <YAxis
+                  stroke="#94a3b8"
+                  fontSize={12}
+                  tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                  axisLine={false}
+                  tickLine={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
+                    borderColor: '#e2e8f0',
+                    color: '#1e293b',
+                    borderRadius: '12px',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)',
+                    padding: '12px'
+                  }}
+                  itemStyle={{ color: '#475569', fontSize: '13px', fontWeight: 500 }}
+                  formatter={(value: number) => [`$${value.toLocaleString()}`, '']}
+                  cursor={{ stroke: '#cbd5e1', strokeWidth: 1, strokeDasharray: '4 4' }}
+                />
+
+                {/* Historical Data */}
+                <Area
+                  type="monotone"
+                  dataKey="actual"
+                  stroke="#4f46e5"
+                  strokeWidth={3}
+                  fill="url(#colorHistorical)"
+                  name="Actual Balance"
+                  connectNulls={false}
+                />
+
+                {/* Forecast Cone */}
+                <Area
+                  type="monotone"
+                  dataKey="upperBound"
+                  stroke="#a5b4fc"
+                  strokeDasharray="5 5"
+                  fill="url(#colorForecast)"
+                  name="Optimistic Case"
+                  connectNulls={false}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="predicted"
+                  stroke="#818cf8"
+                  strokeWidth={2}
+                  fill="transparent"
+                  name="Projected Balance"
+                  connectNulls={false}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="lowerBound"
+                  stroke="#a5b4fc"
+                  strokeDasharray="5 5"
+                  fill="transparent"
+                  name="Pessimistic Case"
+                  connectNulls={false}
+                />
+
+                {todayLabel && (
+                  <ReferenceLine
+                    x={todayLabel}
+                    stroke="#ef4444"
+                    strokeDasharray="3 3"
+                    label={{ position: 'top', value: 'Today', fill: '#ef4444', fontSize: 12, fontWeight: 600 }}
+                  />
+                )}
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="h-[400px] flex items-center justify-center">
+            <div className="text-center">
+              <TrendingUp className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <p className="text-slate-500">Upload transaction data to generate a forecast</p>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Financial Calendar Section */}
@@ -318,8 +512,7 @@ export function Layer2Forecaster() {
                   day_selected: "!bg-indigo-600 !text-white hover:!bg-indigo-700",
                   day_today: "bg-slate-200 dark:bg-slate-700 font-semibold",
                 }}
-                disabled={(date) => {
-                  // Disable dates outside the range (past start date - 30 days to end date + 90 days)
+                disabled={(date: Date) => {
                   if (!startDate || !endDate) return false;
                   const minDate = new Date(startDate);
                   minDate.setDate(minDate.getDate() - 30);
@@ -328,7 +521,7 @@ export function Layer2Forecaster() {
                   return date < minDate || date > maxDate;
                 }}
               />
-              
+
               {/* Legend */}
               <div className="mt-4 flex flex-wrap gap-4 text-xs">
                 <div className="flex items-center space-x-2">
@@ -365,7 +558,7 @@ export function Layer2Forecaster() {
                         {selectedDate.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                       </p>
                     </div>
-                    
+
                     {selectedDateDetails.revenues > 0 && (
                       <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800">
                         <div className="flex items-center justify-between">
@@ -379,7 +572,7 @@ export function Layer2Forecaster() {
                         </div>
                       </div>
                     )}
-                    
+
                     {selectedDateDetails.expenses > 0 && (
                       <div className="p-3 rounded-lg bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800">
                         <div className="flex items-center justify-between">
@@ -393,7 +586,7 @@ export function Layer2Forecaster() {
                         </div>
                       </div>
                     )}
-                    
+
                     {selectedDateDetails.type === 'historical' && selectedDateDetails.transactions.length > 0 && (
                       <div className="pt-3 border-t border-slate-200 dark:border-slate-700">
                         <p className="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">
@@ -401,29 +594,22 @@ export function Layer2Forecaster() {
                         </p>
                         <div className="space-y-3 max-h-80 overflow-y-auto pr-1">
                           {selectedDateDetails.transactions.map((t, idx) => (
-                            <div 
-                              key={idx} 
+                            <div
+                              key={idx}
                               className="p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-sm transition-all"
                             >
                               <div className="space-y-2">
-                                {/* Transaction Description */}
                                 <div>
                                   <p className="text-sm font-semibold text-slate-900 dark:text-slate-100 leading-snug break-words">
                                     {t.description}
                                   </p>
                                 </div>
-                                
-                                {/* Category and Amount Row */}
+
                                 <div className="flex items-center justify-between pt-1 border-t border-slate-100 dark:border-slate-700">
                                   <div className="flex items-center space-x-2">
                                     <span className="text-xs px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-400 capitalize font-medium">
-                                      {t.category.replace(/_/g, ' ')}
+                                      {String(t.category).replace(/_/g, ' ')}
                                     </span>
-                                    {t.original_category && t.original_category !== t.category && (
-                                      <span className="text-xs text-slate-400 dark:text-slate-500 italic">
-                                        (was {t.original_category.replace(/_/g, ' ')})
-                                      </span>
-                                    )}
                                   </div>
                                   <span className={`text-base font-bold ${t.amount < 0 ? 'text-rose-600 dark:text-rose-400' : 'text-emerald-600 dark:text-emerald-400'}`}>
                                     {t.amount < 0 ? '-' : '+'}${Math.abs(t.amount).toLocaleString('en-US', { minimumFractionDigits: 2 })}
@@ -435,11 +621,11 @@ export function Layer2Forecaster() {
                         </div>
                       </div>
                     )}
-                    
+
                     {selectedDateDetails.type === 'projected' && (
                       <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
                         <p className="text-xs text-slate-500 dark:text-slate-400 italic">
-                          Based on historical averages with variance
+                          Based on AI analysis of historical patterns
                         </p>
                       </div>
                     )}
@@ -453,61 +639,82 @@ export function Layer2Forecaster() {
         </div>
       )}
 
-      {/* Insight Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <InsightCard 
-          type="warning"
-          icon={AlertTriangle}
-          title="Liquidity Risk Detected"
-          desc="Large tax payment ($12k) due in 45 days. Current projection shows buffer dipping below 10% threshold."
-        />
-        <InsightCard 
-          type="success"
-          icon={TrendingUp}
-          title="Positive Momentum"
-          desc="MRR growth trending at +8% MoM. Outperforming baseline model by 2.3%."
-        />
-        <InsightCard 
-          type="info"
-          icon={ShieldCheck}
-          title="Safe to Spend"
-          desc="You can safely deploy up to $5,200 this month without impacting your 6-month runway."
-        />
-      </div>
+      {/* AI Insight Cards */}
+      {insights.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {insights.map((insight, idx) => (
+            <InsightCard
+              key={idx}
+              type={insight.type}
+              icon={insight.type === 'warning' ? AlertTriangle : insight.type === 'success' ? TrendingUp : ShieldCheck}
+              title={insight.title}
+              desc={insight.description}
+              metricValue={insight.metric_value}
+            />
+          ))}
+        </div>
+      )}
+
+      {/* Fallback insights if no AI insights available */}
+      {insights.length === 0 && forecastResult && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <InsightCard
+            type={metrics.runway_months < 6 ? "warning" : "success"}
+            icon={metrics.runway_months < 6 ? AlertTriangle : TrendingUp}
+            title={metrics.runway_months < 6 ? "Low Runway" : "Healthy Runway"}
+            desc={`Current runway of ${metrics.runway_months.toFixed(1)} months ${metrics.runway_months < 6 ? 'is below recommended 6-month minimum.' : 'provides solid financial stability.'}`}
+          />
+          <InsightCard
+            type={metrics.avg_daily_net > 0 ? "success" : "warning"}
+            icon={TrendingUp}
+            title={metrics.avg_daily_net > 0 ? "Positive Cash Flow" : "Negative Cash Flow"}
+            desc={`Averaging $${Math.abs(metrics.avg_daily_net).toFixed(2)} ${metrics.avg_daily_net > 0 ? 'net positive' : 'net negative'} daily.`}
+          />
+          <InsightCard
+            type="info"
+            icon={ShieldCheck}
+            title="Safety Buffer"
+            desc={`Recommended safety buffer of $${metrics.safety_buffer.toLocaleString()} covers 3 months of expenses.`}
+          />
+        </div>
+      )}
     </div>
   );
 }
 
-function InsightCard({ type, icon: Icon, title, desc }: any) {
-  const styles = {
-    warning: "bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-100 icon-amber-600 dark:icon-amber-400",
-    success: "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100 icon-emerald-600 dark:icon-emerald-400",
-    info: "bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-100 icon-indigo-600 dark:icon-indigo-400",
-  }[type as string] || "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700";
+interface InsightCardProps {
+  type: string;
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  desc: string;
+  metricValue?: string;
+}
 
-  const iconColor = styles.split(' ').find(c => c.startsWith('icon-'))?.replace('icon-', 'text-');
+function InsightCard({ type, icon: Icon, title, desc, metricValue }: InsightCardProps) {
+  const styles = {
+    warning: "bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-100",
+    success: "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100",
+    info: "bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-100",
+  }[type] || "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700";
+
+  const iconColors = {
+    warning: "text-amber-600 dark:text-amber-400",
+    success: "text-emerald-600 dark:text-emerald-400",
+    info: "text-indigo-600 dark:text-indigo-400",
+  }[type] || "text-slate-600 dark:text-slate-400";
 
   return (
     <div className={`p-5 rounded-xl border ${styles}`}>
-      <div className="flex items-center mb-3">
-        <Icon className={`w-5 h-5 mr-2 ${iconColor}`} />
-        <h4 className="font-semibold text-sm">{title}</h4>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center">
+          <Icon className={`w-5 h-5 mr-2 ${iconColors}`} />
+          <h4 className="font-semibold text-sm">{title}</h4>
+        </div>
+        {metricValue && (
+          <span className={`text-sm font-bold ${iconColors}`}>{metricValue}</span>
+        )}
       </div>
       <p className="text-sm opacity-80 leading-relaxed">{desc}</p>
     </div>
   );
 }
-
-const data = [
-  { date: 'Oct 01', actual: 45000 },
-  { date: 'Oct 08', actual: 48000 },
-  { date: 'Oct 15', actual: 42000 },
-  { date: 'Oct 22', actual: 51000 },
-  { date: 'Oct 29', actual: 54000 },
-  { date: 'Nov 01', actual: 53000, upperBound: 53000, lowerBound: 53000 },
-  { date: 'Nov 08', upperBound: 58000, lowerBound: 49000 },
-  { date: 'Nov 15', upperBound: 62000, lowerBound: 47000 },
-  { date: 'Nov 22', upperBound: 66000, lowerBound: 45000 },
-  { date: 'Nov 29', upperBound: 72000, lowerBound: 42000 },
-  { date: 'Dec 06', upperBound: 78000, lowerBound: 40000 },
-];

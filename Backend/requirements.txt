@@ -4,3 +4,5 @@ pydantic-settings
 python-dotenv
 google-generativeai
 python-multipart
+pandas
+numpy
