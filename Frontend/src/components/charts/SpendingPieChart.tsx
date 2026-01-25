@@ -1,6 +1,6 @@
 // components/charts/SpendingPieChart.tsx - Pie chart for spending breakdown by category
 
-import React from 'react';
+import React, { useState } from 'react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { SpendingCategory } from '../../types/budget';
 import { CATEGORY_DISPLAY } from '../../constants/categories';
@@ -10,6 +10,8 @@ interface SpendingPieChartProps {
 }
 
 export function SpendingPieChart({ summary }: SpendingPieChartProps) {
+    const [activeIndex, setActiveIndex] = useState<number | null>(null);
+    
     // Transform summary data for the pie chart, filtering out zero values
     // Use Math.abs() to handle both positive (income) and negative (expense) amounts
     const chartData = Object.entries(summary)
@@ -72,16 +74,35 @@ export function SpendingPieChart({ summary }: SpendingPieChartProps) {
                                 paddingAngle={2}
                                 dataKey="value"
                                 labelLine={false}
+                                onMouseEnter={(_, index) => setActiveIndex(index)}
+                                onMouseLeave={() => setActiveIndex(null)}
                             >
-                                {chartData.map((entry, index) => (
-                                    <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
+                                {chartData.map((entry, index) => {
+                                    const isActive = activeIndex === index;
+                                    // Lighten color on hover by adding opacity or brightness
+                                    const fillColor = isActive 
+                                        ? `${entry.color}dd` // Slightly lighter by adding opacity
+                                        : entry.color;
+                                    return (
+                                        <Cell 
+                                            key={`cell-${index}`} 
+                                            fill={fillColor}
+                                            stroke={isActive ? '#ffffff' : 'transparent'}
+                                            strokeWidth={isActive ? 3 : 0}
+                                            style={{
+                                                filter: isActive ? 'brightness(1.15) drop-shadow(0 4px 8px rgba(0,0,0,0.2))' : 'none',
+                                                cursor: 'pointer',
+                                                transition: 'all 0.2s ease'
+                                            }}
+                                        />
+                                    );
+                                })}
                             </Pie>
-                            <Tooltip content={<CustomTooltip />} />
+                            <Tooltip content={<CustomTooltip />} wrapperStyle={{ zIndex: 1000 }} />
                         </PieChart>
                     </ResponsiveContainer>
                     {/* Center text overlay */}
-                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                    <div className="absolute inset-0 flex items-center justify-center pointer-events-none" style={{ zIndex: 1 }}>
                         <div className="text-center">
                             <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Total Spending</p>
                             <p className="text-2xl font-bold text-slate-900 dark:text-slate-100">
@@ -92,10 +113,10 @@ export function SpendingPieChart({ summary }: SpendingPieChartProps) {
                 </div>
                 
                 {/* Legend */}
-                <div className="flex-1 space-y-1">
+                <div className="flex-1 space-y-1 relative z-10">
                     {chartData.map((entry, index) => {
                         return (
-                            <div key={index} className="flex items-center gap-2 py-1 px-2 rounded hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors">
+                            <div key={index} className="flex items-center gap-2 py-1 px-2 rounded hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors relative">
                                 <div 
                                     className="w-2.5 h-2.5 rounded-sm flex-shrink-0"
                                     style={{ backgroundColor: entry.color }}
