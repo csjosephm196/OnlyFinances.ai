@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, CheckCircle2, ArrowRight, FileSpreadsheet, AlertCircle, XCircle, Plus, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
 import { uploadCSV } from '../services/budgetApi';
+import confetti from 'canvas-confetti';
 import { ProcessingResult, SpendingCategory } from '../types/budget';
 import { CATEGORY_DISPLAY, getErrorMessage } from '../constants/categories';
 import { useBudget, MergeResult } from '../context/BudgetContext';
@@ -61,6 +62,16 @@ export function Layer1Classifier({ onNavigate }: Layer1ClassifierProps = {}) {
         }
       } else {
         setError(getErrorMessage(response.error_code));
+      }
+
+      // Trigger confetti on success
+      if (response.success) {
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#4f46e5', '#818cf8', '#22c55e']
+        });
       }
     } catch (err) {
       setError('An unexpected error occurred. Please try again.');
@@ -152,22 +163,20 @@ export function Layer1Classifier({ onNavigate }: Layer1ClassifierProps = {}) {
           <div className="inline-flex items-center bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
             <button
               onClick={(e) => { e.stopPropagation(); setMergeMode(false); }}
-              className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                !mergeMode 
-                  ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm' 
+              className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-all ${!mergeMode
+                  ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
-              }`}
+                }`}
             >
               <RefreshCw className="w-4 h-4 mr-1.5" />
               Replace
             </button>
             <button
               onClick={(e) => { e.stopPropagation(); setMergeMode(true); }}
-              className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                mergeMode 
-                  ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm' 
+              className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-all ${mergeMode
+                  ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm'
                   : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
-              }`}
+                }`}
             >
               <Plus className="w-4 h-4 mr-1.5" />
               Add to Existing
@@ -175,8 +184,8 @@ export function Layer1Classifier({ onNavigate }: Layer1ClassifierProps = {}) {
           </div>
         </div>
         <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-2">
-          {mergeMode 
-            ? 'New transactions will be added to your existing data (duplicates skipped)' 
+          {mergeMode
+            ? 'New transactions will be added to your existing data (duplicates skipped)'
             : 'Uploading will replace your current transaction data'}
         </p>
 
@@ -293,7 +302,7 @@ export function Layer1Classifier({ onNavigate }: Layer1ClassifierProps = {}) {
                 Avg Confidence: <span className="font-semibold text-emerald-600 dark:text-emerald-400">{avgConfidence}%</span>
               </span>
             </p>
-            <button 
+            <button
               onClick={() => onNavigate?.('dashboard')}
               className="flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-lg hover:bg-indigo-700 transition-colors shadow-sm shadow-indigo-200"
             >

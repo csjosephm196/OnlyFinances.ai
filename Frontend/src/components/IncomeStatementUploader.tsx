@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, CheckCircle2, ArrowRight, FileSpreadsheet, XCircle, TrendingUp, TrendingDown, DollarSign, Plus, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
 import { uploadIncomeStatement } from '../services/budgetApi';
+import confetti from 'canvas-confetti';
 import { IncomeStatementData, IncomeStatementItem } from '../types/incomeStatement';
 import { useBudget, MergeResult } from '../context/BudgetContext';
 
@@ -55,6 +56,16 @@ export function IncomeStatementUploader({ onNavigate }: { onNavigate?: (layer: s
                 }
             } else {
                 setError(response.message || 'Failed to process income statement');
+            }
+
+            // Trigger confetti on success
+            if (response.success) {
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#9333ea', '#a855f7', '#4f46e5']
+                });
             }
         } catch (err) {
             setError('An unexpected error occurred. Please try again.');
@@ -145,8 +156,8 @@ export function IncomeStatementUploader({ onNavigate }: { onNavigate?: (layer: s
                         <button
                             onClick={(e) => { e.stopPropagation(); setMergeMode(false); }}
                             className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-all ${!mergeMode
-                                    ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm'
-                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                                ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
                                 }`}
                         >
                             <RefreshCw className="w-4 h-4 mr-1.5" />
@@ -155,8 +166,8 @@ export function IncomeStatementUploader({ onNavigate }: { onNavigate?: (layer: s
                         <button
                             onClick={(e) => { e.stopPropagation(); setMergeMode(true); }}
                             className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-all ${mergeMode
-                                    ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm'
-                                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
+                                ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm'
+                                : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
                                 }`}
                         >
                             <Plus className="w-4 h-4 mr-1.5" />
