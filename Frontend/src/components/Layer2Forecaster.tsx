@@ -198,24 +198,131 @@ export function Layer2Forecaster() {
     return totals;
   }, [transactionsByDate]);
 
-  // Generate future projections from forecast result
+  // Analyze historical patterns by day of week from actual transaction data
+  const historicalPatterns = useMemo(() => {
+    // Day of week patterns: 0 = Sunday, 6 = Saturday
+    const dayOfWeekRevenue: number[][] = [[], [], [], [], [], [], []];
+    const dayOfWeekExpense: number[][] = [[], [], [], [], [], [], []];
+    
+    // Collect revenue/expense data by day of week
+    dailyTotals.forEach(({ revenues, expenses }, dateKey) => {
+      const date = new Date(dateKey);
+      const dayOfWeek = date.getDay();
+      
+      dayOfWeekRevenue[dayOfWeek].push(revenues);
+      dayOfWeekExpense[dayOfWeek].push(expenses);
+    });
+    
+    // Calculate average and standard deviation for each day of week
+    const calculateStats = (values: number[]) => {
+      if (values.length === 0) return { avg: 0, stdDev: 0 };
+      const avg = values.reduce((a, b) => a + b, 0) / values.length;
+      const variance = values.reduce((sum, val) => sum + Math.pow(val - avg, 2), 0) / values.length;
+      return { avg, stdDev: Math.sqrt(variance) };
+    };
+    
+    const patterns = {
+      revenue: dayOfWeekRevenue.map(vals => calculateStats(vals)),
+      expense: dayOfWeekExpense.map(vals => calculateStats(vals)),
+    };
+    
+    return patterns;
+  }, [dailyTotals]);
+
+  // Generate future projections from forecast result with REAL patterns from your data
   const futureProjections = useMemo(() => {
-    const projections = new Map<string, { projectedRevenue: number; projectedExpense: number }>();
+    const projections = new Map<string, { 
+      projectedRevenue: number; 
+      projectedExpense: number;
+      projectedBalance: number;
+      upperBound: number | null;
+      lowerBound: number | null;
+      netChange: number;
+    }>();
 
     if (!forecastResult?.data_points) return projections;
 
-    forecastResult.data_points.forEach(point => {
-      if (point.predicted !== null) {
-        // Estimate revenue/expense from projected balance change
+    forecastResult.data_points.forEach((point, index) => {
+      // Only include future dates (dates with predicted values but no actual)
+      if (point.predicted !== null && point.actual === null) {
+        // Calculate daily net change from balance difference
+        const currentBalance = point.cumulative_balance ?? point.predicted ?? 0;
+        let dailyNetChange = forecastResult.metrics.avg_daily_net;
+        
+        // Get previous data point to calculate actual daily change
+        if (index > 0) {
+          const prevPoint = forecastResult.data_points[index - 1];
+          const prevBal = prevPoint.cumulative_balance ?? prevPoint.actual ?? prevPoint.predicted ?? 0;
+          dailyNetChange = currentBalance - prevBal;
+        }
+
+        // Get day of week for this projected date
+        const pointDate = new Date(point.date);
+        const dayOfWeek = pointDate.getDay();
+        
+        // Use REAL historical patterns for this day of week from your CSV data
+        const revenuePattern = historicalPatterns.revenue[dayOfWeek];
+        const expensePattern = historicalPatterns.expense[dayOfWeek];
+        
+        // Base revenue/expense from your actual historical averages for this weekday
+        let projectedRevenue = revenuePattern.avg;
+        let projectedExpense = expensePattern.avg;
+        
+        // Add realistic variance based on your actual historical volatility
+        // Use a seeded random based on the date for consistency
+        const dateHash = pointDate.getDate() + pointDate.getMonth() * 31;
+        const varianceSeed = Math.sin(dateHash) * 0.5 + 0.5; // 0 to 1
+        
+        // Apply variance within your actual historical standard deviation
+        const revenueVariance = (varianceSeed - 0.5) * revenuePattern.stdDev;
+        const expenseVariance = (Math.cos(dateHash) * 0.5 + 0.5 - 0.5) * expensePattern.stdDev;
+        
+        projectedRevenue = Math.max(0, projectedRevenue + revenueVariance);
+        projectedExpense = Math.max(0, projectedExpense + expenseVariance);
+        
+        // If no historical data for this day of week, fall back to overall averages
+        if (revenuePattern.avg === 0 && expensePattern.avg === 0) {
+          projectedRevenue = forecastResult.metrics.avg_daily_revenue;
+          projectedExpense = forecastResult.metrics.avg_daily_expense;
+        }
+        
+        // Adjust to match the AI's predicted net change for accuracy
+        const calculatedNet = projectedRevenue - projectedExpense;
+        if (Math.abs(calculatedNet - dailyNetChange) > 1) {
+          // Scale both proportionally to match the predicted net
+          const totalFlow = projectedRevenue + projectedExpense;
+          if (totalFlow > 0) {
+            // Keep the ratio but adjust to match net
+            const ratio = projectedRevenue / totalFlow;
+            // Solve: revenue - expense = dailyNetChange, revenue + expense = totalFlow
+            projectedRevenue = (totalFlow + dailyNetChange) / 2;
+            projectedExpense = (totalFlow - dailyNetChange) / 2;
+            
+            // Ensure non-negative
+            if (projectedExpense < 0) {
+              projectedExpense = 0;
+              projectedRevenue = dailyNetChange;
+            }
+            if (projectedRevenue < 0) {
+              projectedRevenue = 0;
+              projectedExpense = -dailyNetChange;
+            }
+          }
+        }
+        
         projections.set(point.date, {
-          projectedRevenue: forecastResult.metrics.avg_daily_revenue,
-          projectedExpense: forecastResult.metrics.avg_daily_expense,
+          projectedRevenue: Math.max(0, projectedRevenue),
+          projectedExpense: Math.max(0, projectedExpense),
+          projectedBalance: currentBalance,
+          upperBound: point.upper_bound,
+          lowerBound: point.lower_bound,
+          netChange: dailyNetChange,
         });
       }
     });
 
     return projections;
-  }, [forecastResult]);
+  }, [forecastResult, historicalPatterns]);
 
   // Get date range from processing result
   const dateRange = processingResult?.date_range;
@@ -243,6 +350,10 @@ export function Layer2Forecaster() {
         type: 'projected' as const,
         expenses: projection.projectedExpense,
         revenues: projection.projectedRevenue,
+        projectedBalance: projection.projectedBalance,
+        upperBound: projection.upperBound,
+        lowerBound: projection.lowerBound,
+        netChange: projection.netChange,
         transactions: [],
       };
     }
@@ -257,6 +368,8 @@ export function Layer2Forecaster() {
       hasRevenues: [],
       hasBoth: [],
       projected: [],
+      projectedPositive: [],
+      projectedNegative: [],
     };
 
     const createDateAtMidnight = (dateStr: string): Date => {
@@ -288,10 +401,17 @@ export function Layer2Forecaster() {
       }
     });
 
-    futureProjections.forEach((_, dateKey) => {
+    futureProjections.forEach((projection, dateKey) => {
       if (!categorizedDates.has(dateKey)) {
         const date = createDateAtMidnight(dateKey);
         mods.projected.push(date);
+        
+        // Add additional modifier based on net change
+        if (projection.netChange >= 0) {
+          mods.projectedPositive.push(date);
+        } else {
+          mods.projectedNegative.push(date);
+        }
       }
     });
 
@@ -566,7 +686,9 @@ export function Layer2Forecaster() {
                   hasExpenses: "!bg-rose-100 dark:!bg-rose-900/30 !text-rose-900 dark:!text-rose-100 font-medium",
                   hasRevenues: "!bg-emerald-100 dark:!bg-emerald-900/30 !text-emerald-900 dark:!text-emerald-100 font-medium",
                   hasBoth: "!bg-indigo-100 dark:!bg-indigo-900/30 !text-indigo-900 dark:!text-indigo-100 font-semibold ring-2 ring-indigo-400 dark:ring-indigo-600",
-                  projected: "border-2 border-dashed border-slate-300 dark:border-slate-600",
+                  projected: "border-2 border-dashed",
+                  projectedPositive: "border-emerald-400 dark:border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/10",
+                  projectedNegative: "border-rose-400 dark:border-rose-500 bg-rose-50/50 dark:bg-rose-950/10",
                 }}
                 classNames={{
                   months: "w-full",
@@ -605,8 +727,12 @@ export function Layer2Forecaster() {
                   <span className="text-slate-600 dark:text-slate-400">Both</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 rounded border-2 border-dashed border-slate-300 dark:border-slate-600"></div>
-                  <span className="text-slate-600 dark:text-slate-400">Projected</span>
+                  <div className="w-4 h-4 rounded border-2 border-dashed border-emerald-400 dark:border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/10"></div>
+                  <span className="text-slate-600 dark:text-slate-400">Projected (Positive)</span>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <div className="w-4 h-4 rounded border-2 border-dashed border-rose-400 dark:border-rose-500 bg-rose-50/50 dark:bg-rose-950/10"></div>
+                  <span className="text-slate-600 dark:text-slate-400">Projected (Negative)</span>
                 </div>
               </div>
             </div>
@@ -691,10 +817,57 @@ export function Layer2Forecaster() {
                     )}
 
                     {selectedDateDetails.type === 'projected' && (
-                      <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
-                        <p className="text-xs text-slate-500 dark:text-slate-400 italic">
-                          Based on AI analysis of historical patterns
-                        </p>
+                      <div className="space-y-3">
+                        {/* Projected Balance Card */}
+                        {'projectedBalance' in selectedDateDetails && selectedDateDetails.projectedBalance !== undefined && (
+                          <div className="p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300 flex items-center">
+                                <DollarSign className="w-4 h-4 mr-2 text-indigo-600 dark:text-indigo-400" />
+                                Projected Balance
+                              </span>
+                              <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                                ${selectedDateDetails.projectedBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                            {/* Confidence Range */}
+                            {'upperBound' in selectedDateDetails && selectedDateDetails.upperBound !== null && 'lowerBound' in selectedDateDetails && selectedDateDetails.lowerBound !== null && (
+                              <div className="text-xs text-indigo-600/70 dark:text-indigo-400/70 border-t border-indigo-200/50 dark:border-indigo-700/50 pt-2 mt-2">
+                                <div className="flex justify-between">
+                                  <span>Confidence Range:</span>
+                                  <span className="font-medium">
+                                    ${selectedDateDetails.lowerBound.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })} - ${selectedDateDetails.upperBound.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                                  </span>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Daily Net Change */}
+                        {'netChange' in selectedDateDetails && selectedDateDetails.netChange !== undefined && (
+                          <div className={`p-3 rounded-lg ${selectedDateDetails.netChange >= 0 ? 'bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800' : 'bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-800'}`}>
+                            <div className="flex items-center justify-between">
+                              <span className={`text-sm font-medium flex items-center ${selectedDateDetails.netChange >= 0 ? 'text-emerald-700 dark:text-emerald-300' : 'text-rose-700 dark:text-rose-300'}`}>
+                                {selectedDateDetails.netChange >= 0 ? (
+                                  <ArrowUp className="w-4 h-4 mr-2 text-emerald-600 dark:text-emerald-400" />
+                                ) : (
+                                  <ArrowDown className="w-4 h-4 mr-2 text-rose-600 dark:text-rose-400" />
+                                )}
+                                Projected Daily Net
+                              </span>
+                              <span className={`text-lg font-bold ${selectedDateDetails.netChange >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                                {selectedDateDetails.netChange >= 0 ? '+' : '-'}${Math.abs(selectedDateDetails.netChange).toLocaleString('en-US', { minimumFractionDigits: 2 })}
+                              </span>
+                            </div>
+                          </div>
+                        )}
+
+                        <div className="pt-2 border-t border-slate-200 dark:border-slate-700">
+                          <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+                            Based on AI analysis of historical patterns
+                          </p>
+                        </div>
                       </div>
                     )}
                   </div>
