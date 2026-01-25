@@ -1,0 +1,30 @@
+Date,Description,Category,Amount
+2025-08-31,Main Checking Account,cash,8500.00
+2025-08-31,Business Savings Account,cash,15000.00
+2025-08-31,Unpaid Customer Invoice #104,accounts_receivable,2400.00
+2025-08-31,MacBook Pro & Monitor Setup,equipment,3200.00
+2025-08-31,Chase Sapphire Credit Card,credit_cards,-1450.00
+2025-08-31,Unpaid Vendor - AWS Bill,accounts_payable,-85.00
+2025-09-30,E*Trade Stock Portfolio,investments,12400.00
+2025-09-30,Product Inventory - Q4 Stock,inventory,5500.00
+2025-09-30,Security Deposit - Office,prepaid_expenses,2500.00
+2025-09-30,Personal Loan Balance,short_term_debt,-5000.00
+2025-09-30,Estimated Quarterly Taxes Due,taxes_payable,-3200.00
+2025-10-31,Main Checking Account,cash,9200.00
+2025-10-31,Amex Business Card,credit_cards,-2100.00
+2025-10-31,Unpaid Freelance Services A/R,accounts_receivable,1800.00
+2025-10-31,Accrued Utilities - October,accrued_expenses,-240.00
+2025-11-30,Investment Property Equity,property,45000.00
+2025-11-30,Mortgage Balance,long_term_debt,-32000.00
+2025-11-30,Software License - Annual,intangible_assets,1200.00
+2025-11-30,Prepaid Professional Liability,prepaid_expenses,600.00
+2025-12-31,Main Checking Account,cash,11500.00
+2025-12-31,Holiday Inventory Stock,inventory,3000.00
+2025-12-31,Customer Prepayment - Project X,deferred_revenue,-2500.00
+2025-12-31,Chase Sapphire Credit Card,credit_cards,-850.00
+2026-01-24,Main Checking Account,cash,12800.00
+2026-01-24,Business Savings Account,cash,16500.00
+2026-01-24,Crypto & Mutual Funds,investments,14200.00
+2026-01-24,Visa Credit Card Balance,credit_cards,-1200.00
+2026-01-24,Unpaid Contractor Fees,accounts_payable,-1500.00
+2026-01-24,Payroll Taxes Payable,taxes_payable,-900.00
