@@ -17,11 +17,21 @@ import { ConversationWithId } from '../types/firestoreTypes';
 
 export function Layer3Advisor() {
   const [query, setQuery] = useState('');
+  const [stressTestingMode, setStressTestingMode] = useState<boolean>(false);
+  
+  // Get initial greeting based on stress testing mode
+  const getInitialGreeting = (isStressMode: boolean) => {
+    if (isStressMode) {
+      return "Hello! You are in stress testing mode. I'll analyze your financial resilience under various adverse scenarios like job loss, market crashes, emergency expenses, and other financial shocks. Ask me to test your financial plan against different stress scenarios.";
+    }
+    return "Hello! I'm your AI Financial Advisor. Ask me about investing, budgeting, retirement planning, debt management, or any other financial topic.";
+  };
+
   const [messages, setMessages] = useState<any[]>([
     {
       id: 1,
       type: 'bot',
-      text: "Hello! I'm your AI Financial Advisor. Ask me about investing, budgeting, retirement planning, debt management, or any other financial topic.",
+      text: getInitialGreeting(false),
     }
   ]);
   const [isTyping, setIsTyping] = useState(false);
@@ -194,7 +204,9 @@ export function Layer3Advisor() {
     const response = await sendMessage(
       text,
       sessionId,
-      getConversationHistory()
+      getConversationHistory(),
+      undefined,
+      stressTestingMode
     );
 
     setIsTyping(false);
@@ -269,11 +281,26 @@ export function Layer3Advisor() {
     setMessages([{
       id: 1,
       type: 'bot',
-      text: "Hello! I'm your AI Financial Advisor. Ask me about investing, budgeting, retirement planning, debt management, or any other financial topic.",
+      text: getInitialGreeting(stressTestingMode),
     }]);
     setSessionId(null);
     setSuggestions([]);
     setCurrentConversationId(null);
+  };
+
+  // Handle stress testing mode toggle
+  const handleStressTestingToggle = () => {
+    const newMode = !stressTestingMode;
+    setStressTestingMode(newMode);
+    
+    // Update the initial greeting message if it's the first message
+    if (messages.length === 1 && messages[0].type === 'bot') {
+      setMessages([{
+        id: 1,
+        type: 'bot',
+        text: getInitialGreeting(newMode),
+      }]);
+    }
   };
 
   // Load a conversation from history
@@ -329,13 +356,62 @@ export function Layer3Advisor() {
     <div className="flex h-[calc(100vh-140px)] gap-6 animate-in fade-in duration-500">
       {/* Chat Area */}
       <div className="flex-1 flex flex-col bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl overflow-hidden">
+        {/* Header with Stress Testing Toggle */}
+        <div className="px-6 py-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className={`
+              flex-shrink-0 w-10 h-10 rounded-full flex items-center justify-center shadow-sm
+              ${stressTestingMode ? 'bg-purple-600 text-white' : 'bg-indigo-600 text-white'}
+            `}>
+              <Sparkles className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+                {stressTestingMode ? 'Stress Testing Mode' : 'AI Financial Advisor'}
+              </h2>
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {stressTestingMode ? 'Testing financial resilience' : 'Personalized financial advice'}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <span className={`text-xs font-medium ${stressTestingMode ? 'text-purple-600 dark:text-purple-400' : 'text-slate-500 dark:text-slate-400'}`}>
+              {stressTestingMode ? 'Stress Testing' : 'Normal Mode'}
+            </span>
+            <button
+              onClick={handleStressTestingToggle}
+              className={`
+                relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2
+                ${stressTestingMode 
+                  ? 'bg-purple-600 focus:ring-purple-500' 
+                  : 'bg-slate-300 dark:bg-slate-600 focus:ring-indigo-500'
+                }
+              `}
+              role="switch"
+              aria-checked={stressTestingMode}
+              title={stressTestingMode ? 'Disable stress testing mode' : 'Enable stress testing mode'}
+            >
+              <span
+                className={`
+                  inline-block h-4 w-4 transform rounded-full bg-white transition-transform
+                  ${stressTestingMode ? 'translate-x-6' : 'translate-x-1'}
+                `}
+              />
+            </button>
+          </div>
+        </div>
         <div className="flex-1 overflow-y-auto p-6 space-y-6 bg-slate-50/50 dark:bg-slate-900/50" ref={scrollRef}>
           {messages.map((msg) => (
             <div key={msg.id} className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}>
               <div className={`flex max-w-[80%] ${msg.type === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                 <div className={`
                   flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center mx-2 mt-1 shadow-sm
-                  ${msg.type === 'user' ? 'bg-slate-200' : 'bg-indigo-600 text-white'}
+                  ${msg.type === 'user' 
+                    ? 'bg-slate-200' 
+                    : stressTestingMode 
+                      ? 'bg-purple-600 text-white' 
+                      : 'bg-indigo-600 text-white'
+                  }
                 `}>
                   {msg.type === 'user' ? <User className="w-4 h-4 text-slate-600" /> : <Sparkles className="w-4 h-4" />}
                 </div>
@@ -471,7 +547,7 @@ export function Layer3Advisor() {
               onChange={(e) => setQuery(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSend()}
               placeholder="Ask about investing, budgeting, retirement..."
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-5 pr-32 py-3.5 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl pl-5 pr-40 py-3.5 text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all shadow-sm"
               disabled={isTyping}
             />
             <div className="absolute right-2 top-2 flex items-center gap-2">

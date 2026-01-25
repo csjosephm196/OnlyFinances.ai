@@ -318,11 +318,13 @@ class ChatRequest(BaseModel):
         session_id: Optional session ID for conversation tracking
         conversation_history: Previous messages in the conversation
         financial_context: Optional financial data for personalized advice
+        stress_testing_mode: Optional flag to enable stress testing mode
     """
     message: str = Field(..., min_length=1, max_length=4000)
     session_id: Optional[str] = None
     conversation_history: list[ChatMessage] = Field(default_factory=list)
     financial_context: Optional[FinancialContext] = None
+    stress_testing_mode: Optional[bool] = False
 
     class Config:
         json_schema_extra = {

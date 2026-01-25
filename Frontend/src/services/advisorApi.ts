@@ -11,13 +11,15 @@ const ADVISOR_API_URL = 'https://demo-backend-bqyy.onrender.com';
  * @param sessionId - Optional session ID for conversation tracking
  * @param conversationHistory - Previous messages in the conversation
  * @param financialContext - Optional financial data for personalized advice
+ * @param stressTestingMode - Optional flag to enable stress testing mode
  * @returns ChatResponse on success, or AdvisorError on failure
  */
 export async function sendMessage(
     message: string,
     sessionId?: string | null,
     conversationHistory?: ChatMessage[],
-    financialContext?: FinancialContext
+    financialContext?: FinancialContext,
+    stressTestingMode?: boolean
 ): Promise<ChatResponse | AdvisorError> {
     try {
         const response = await fetch(`${ADVISOR_API_URL}/v1/advisor/chat`, {
@@ -30,6 +32,7 @@ export async function sendMessage(
                 session_id: sessionId,
                 conversation_history: conversationHistory,
                 financial_context: financialContext,
+                stress_testing_mode: stressTestingMode || false,
             }),
         });
 

@@ -29,6 +29,7 @@ export interface ChatRequest {
     session_id?: string;
     conversation_history?: ChatMessage[];
     financial_context?: FinancialContext;
+    stress_testing_mode?: boolean;
 }
 
 /**
