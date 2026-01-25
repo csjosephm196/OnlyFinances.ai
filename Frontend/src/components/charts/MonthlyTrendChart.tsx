@@ -96,11 +96,48 @@ export function MonthlyTrendChart({ monthlyBreakdown }: MonthlyTrendChartProps) 
         );
     }
 
+    // Calculate monthly statistics
+    const avgMonthlySpending = chartData.reduce((sum, m) => sum + m.total, 0) / chartData.length;
+    const highestMonth = chartData.reduce((max, m) => m.total > max.total ? m : max, chartData[0]);
+    const lowestMonth = chartData.reduce((min, m) => m.total < min.total ? m : min, chartData[0]);
+    
+    // Calculate trend
+    const firstHalf = chartData.slice(0, Math.ceil(chartData.length / 2));
+    const secondHalf = chartData.slice(Math.ceil(chartData.length / 2));
+    const firstHalfAvg = firstHalf.reduce((sum, m) => sum + m.total, 0) / firstHalf.length;
+    const secondHalfAvg = secondHalf.reduce((sum, m) => sum + m.total, 0) / secondHalf.length;
+    const trendPercentage = ((secondHalfAvg - firstHalfAvg) / firstHalfAvg) * 100;
+
     return (
-        <div className="w-full">
-            <ResponsiveContainer width="100%" height={300}>
+        <div className="w-full space-y-4">
+            {/* Statistics Row */}
+            <div className="grid grid-cols-3 gap-3">
+                <div className="bg-white/40 dark:bg-slate-700/40 rounded-lg p-3 border border-slate-200/50 dark:border-slate-600/50">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Avg Monthly</p>
+                    <p className="text-lg font-bold text-slate-900 dark:text-slate-100">
+                        ${avgMonthlySpending.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </p>
+                </div>
+                <div className="bg-white/40 dark:bg-slate-700/40 rounded-lg p-3 border border-rose-200/50 dark:border-rose-800/50">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Highest</p>
+                    <p className="text-lg font-bold text-rose-600 dark:text-rose-400">
+                        ${highestMonth.total.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </p>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500">{highestMonth.month}</p>
+                </div>
+                <div className="bg-white/40 dark:bg-slate-700/40 rounded-lg p-3 border border-emerald-200/50 dark:border-emerald-800/50">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 mb-1">Lowest</p>
+                    <p className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
+                        ${lowestMonth.total.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+                    </p>
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500">{lowestMonth.month}</p>
+                </div>
+            </div>
+
+            {/* Chart */}
+            <ResponsiveContainer width="100%" height={280}>
                 <BarChart data={chartData} barCategoryGap="20%">
-                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#E2E8F0" className="dark:stroke-slate-700" />
                     <XAxis
                         dataKey="month"
                         tick={{ fill: '#64748B', fontSize: 12 }}
@@ -115,9 +152,10 @@ export function MonthlyTrendChart({ monthlyBreakdown }: MonthlyTrendChartProps) 
                     />
                     <Tooltip content={<CustomTooltip />} />
                     <Legend
-                        wrapperStyle={{ paddingTop: '20px' }}
+                        wrapperStyle={{ paddingTop: '16px' }}
+                        iconSize={10}
                         formatter={(value: string) => (
-                            <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
+                            <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
                                 {CATEGORY_DISPLAY[value as SpendingCategory]?.label || value}
                             </span>
                         )}
@@ -133,6 +171,32 @@ export function MonthlyTrendChart({ monthlyBreakdown }: MonthlyTrendChartProps) 
                     ))}
                 </BarChart>
             </ResponsiveContainer>
+
+            {/* Trend Insight */}
+            {chartData.length >= 2 && (
+                <div className="bg-white/40 dark:bg-slate-700/40 rounded-lg p-3 border border-slate-200/50 dark:border-slate-600/50">
+                    <div className="flex items-center justify-between">
+                        <span className="text-xs text-slate-600 dark:text-slate-400">Overall Trend</span>
+                        <div className="flex items-center gap-2">
+                            {trendPercentage > 0 ? (
+                                <>
+                                    <span className="text-sm font-semibold text-rose-600 dark:text-rose-400">
+                                        ↑ {Math.abs(trendPercentage).toFixed(1)}%
+                                    </span>
+                                    <span className="text-xs text-slate-500 dark:text-slate-400">spending increase</span>
+                                </>
+                            ) : (
+                                <>
+                                    <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                                        ↓ {Math.abs(trendPercentage).toFixed(1)}%
+                                    </span>
+                                    <span className="text-xs text-slate-500 dark:text-slate-400">spending decrease</span>
+                                </>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
