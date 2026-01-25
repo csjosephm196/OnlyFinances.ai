@@ -1,0 +1,31 @@
+Date,Description,Category,Amount
+2025-08-01,Primary Salary Deposit,wages_salary,5500.00
+2025-08-05,Monthly Apartment Mortgage,rent,-2100.00
+2025-08-10,Freelance Design Project,services,1200.00
+2025-08-15,Whole Foods Market,other_expenses,-145.20
+2025-08-20,Verizon Wireless & Internet,utilities,-165.00
+2025-09-01,W2 Employment Paycheck,wages_salary,5500.00
+2025-09-05,Product Sales - Etsy Shop,sales,850.00
+2025-09-10,Materials for Merchandise,cost_of_goods_sold,-300.00
+2025-09-15,Starbucks and City Transport,travel,-55.00
+2025-09-25,Quarterly Stock Dividends,investment_income,215.50
+2025-10-01,Primary Salary Deposit,wages_salary,5500.00
+2025-10-04,Facebook Ad Campaign,marketing,-250.00
+2025-10-12,CPA Tax Preparation Fee,professional_fees,-400.00
+2025-10-18,Gas Station and Parking,travel,-72.00
+2025-10-22,Netflix and Spotify Subs,other_expenses,-35.98
+2025-11-01,W2 Employment Paycheck,wages_salary,5500.00
+2025-11-05,Property Rental Income - Unit B,rental_income,1400.00
+2025-11-10,Hydro and Water Bill,utilities,-110.00
+2025-11-15,Office Depot - Paper and Pens,office_supplies,-45.00
+2025-11-20,Business Liability Insurance,insurance,-120.00
+2025-12-01,Primary Salary Deposit,wages_salary,5500.00
+2025-12-10,Side Hustle - Consulting,services,900.00
+2025-12-15,Holiday Travel - Delta Flight,travel,-550.00
+2025-12-20,High Yield Savings Interest,interest_income,42.15
+2025-12-28,Income Tax Provision,taxes,-1100.00
+2026-01-01,W2 Employment Paycheck,wages_salary,5800.00
+2026-01-05,Gym Membership,other_expenses,-60.00
+2026-01-10,Book Purchase - Education,other_expenses,-25.00
+2026-01-15,Credit Card Interest Paid,interest_expense,-15.40
+2026-01-20,Client Project - Contract Work,services,1500.00

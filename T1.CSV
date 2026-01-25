@@ -1,0 +1,20 @@
+Date,Description,Category,Amount
+2025-06-01,Primary Salary Deposit,wages_salary,5800.00
+2025-06-01,Rent - Main Office,rent,-1200.00
+2025-06-05,Adobe Creative Cloud,other_expenses,-55.99
+2025-06-10,Stripe Payout - App Sales,sales,1450.00
+2025-06-12,Bell Internet & Phone,utilities,-145.00
+2025-06-15,Starbucks and Parking,travel,-42.50
+2025-06-20,Amex Credit Card Payment,credit_cards,-800.00
+2025-06-25,Freelance UI Consulting,services,950.00
+2025-06-28,Whole Foods Groceries,other_expenses,-185.00
+2025-07-01,Primary Salary Deposit,wages_salary,5800.00
+2025-07-01,Rent - Main Office,rent,-1200.00
+2025-07-05,Adobe Creative Cloud,other_expenses,-55.99
+2025-07-08,Amazon - New PC Monitor,equipment,-350.00
+2025-07-12,Client Invoice #202 Received,accounts_receivable,2100.00
+2025-07-14,Uber to Networking Event,travel,-28.00
+2025-07-18,Dividend Payout - Stocks,investment_income,112.40
+2025-07-22,Quarterly Business Insurance,insurance,-320.00
+2025-07-25,Side Hustle - Web Dev,services,1200.00
+2025-07-28,Interest Earned - Savings,interest_income,12.15

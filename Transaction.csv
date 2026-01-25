@@ -1,0 +1,34 @@
+Date,Description,Category,Amount
+2025-07-01,Stripe Payout - Web Sales,revenue,4500.00
+2025-07-03,WeWork Office Rent,rent,-1200.00
+2025-07-05,Google Ads - Q3 Kickoff,advertising,-550.00
+2025-07-10,Adobe Creative Cloud,software,-55.99
+2025-07-15,Gusto Payroll Service,payroll,-45.00
+2025-07-15,Employee Wages,wages,-3200.00
+2025-07-20,Uber to Client Meeting,transportation,-24.50
+2025-08-02,Shopify Sales Deposit,revenue,5120.00
+2025-08-05,Comcast Business Internet,utilities,-180.00
+2025-08-12,Apple Store - MacBook Pro,assets,-2499.00
+2025-08-18,Mailchimp Subscription,marketing,-75.00
+2025-08-25,Upwork - Web Design Freelancer,professional_services,-800.00
+2025-09-01,SBA Loan Payment,loan,-650.00
+2025-09-05,Amazon - Desk Chairs & Ink,office_supplies,-315.20
+2025-09-15,EFTPS Quarterly Tax,taxes,-2100.00
+2025-09-20,Delta Airlines - Conf Flight,travel,-412.00
+2025-09-22,Chipotle - Team Lunch,dining_out,-65.40
+2025-10-02,Client Payment - Consulting,revenue,3000.00
+2025-10-10,Facebook Ads,advertising,-400.00
+2025-10-15,Slack Technologies,subscriptions,-120.00
+2025-10-20,FedEx Shipping Fees,shipping,-42.10
+2025-10-28,Refund - Returned Equipment,refund,150.00
+2025-11-01,Office Rent,rent,-1200.00
+2025-11-05,Verizon Wireless,utilities,-115.00
+2025-11-12,Notion Monthly Plan,subscriptions,-10.00
+2025-11-20,Home Depot - Repairs,maintenance,-210.00
+2025-11-25,Bank Wire Fee,fees,-25.00
+2025-12-02,Square Sales Payout,revenue,6800.00
+2025-12-10,Holiday Bonus - Wages,wages,-1000.00
+2025-12-15,State Farm Insurance,insurance,-340.00
+2025-12-18,Local Attorney - Contract Review,legal,-500.00
+2025-12-20,Whole Foods - Office Snacks,groceries,-85.00
+2025-12-28,Credit Card Interest,interest,-18.40
