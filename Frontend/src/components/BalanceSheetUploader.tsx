@@ -5,7 +5,7 @@ import { uploadBalanceSheet } from '../services/budgetApi';
 import { BalanceSheetData, BalanceSheetItem } from '../types/balanceSheet';
 import { useBudget, MergeResult } from '../context/BudgetContext';
 
-export function BalanceSheetUploader() {
+export function BalanceSheetUploader({ onNavigate }: { onNavigate?: (page: string) => void }) {
     const [isDragOver, setIsDragOver] = useState(false);
     const [processing, setProcessing] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -301,7 +301,10 @@ export function BalanceSheetUploader() {
                                     ${balanceSheetData.equity.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                 </span>
                             </p>
-                            <button className="flex items-center px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-200">
+                            <button 
+                                onClick={() => onNavigate?.('assets')}
+                                className="flex items-center px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-200"
+                            >
                                 View Net Worth <ArrowRight className="w-4 h-4 ml-2" />
                             </button>
                         </div>

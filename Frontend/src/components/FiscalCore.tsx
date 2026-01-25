@@ -66,7 +66,7 @@ export function FiscalCore({ onNavigate, defaultTab }: FiscalCoreProps = {}) {
             case 'transactions':
                 return <Layer1Classifier onNavigate={onNavigate} />;
             case 'balancesheet':
-                return <BalanceSheetUploader />;
+                return <BalanceSheetUploader onNavigate={onNavigate} />;
             case 'incomestatement':
                 return <IncomeStatementUploader onNavigate={onNavigate} />;
             default:
