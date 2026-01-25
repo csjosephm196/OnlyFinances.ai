@@ -28,6 +28,8 @@ from app.services.ai.models import (
     IncomeStatementData,
     RecurringExpensesResult,
     RecurringExpensesRequest,
+    ForecastRequest,
+    ForecastResult,
 )
 
 logger = logging.getLogger(__name__)
@@ -179,10 +181,77 @@ async def process_file_endpoint(
         )
 
 
-@router.post("/forecast")
-async def forecast_endpoint() -> dict:
-    """L2: Generate financial forecasts."""
-    return await forecaster.generate_forecast([])
+@router.post(
+    "/forecast",
+    response_model=ForecastResult,
+    responses={
+        400: {"model": ProcessingError, "description": "Invalid request"},
+        500: {"model": ProcessingError, "description": "Internal processing error"},
+    },
+    summary="Generate 90-Day Financial Forecast",
+    description="""
+    Generate a 90-day cash flow projection based on historical transaction data.
+    
+    The endpoint uses statistical time-series analysis combined with AI-powered
+    insight generation to produce accurate, interpretable forecasts.
+    
+    **Data Sources:**
+    - **Transactions (Required)**: Historical categorized transactions for time-series analysis
+    - **Income Statement (Optional)**: Revenue/expense context for refined projections  
+    - **Balance Sheet (Optional)**: Liquidity data for runway calculations
+    
+    **Features:**
+    - Day-of-week seasonality detection
+    - 95% confidence intervals for uncertainty
+    - AI-generated insight cards (risks, trends, safe-to-spend)
+    - Runway and safety buffer calculations
+    
+    **Returns:**
+    - Daily data points with historical actuals and projected values
+    - Confidence intervals (upper/lower bounds)
+    - Key metrics (runway, safety buffer, averages)
+    - AI-generated insights
+    """,
+)
+async def forecast_endpoint(request: ForecastRequest) -> ForecastResult:
+    """
+    L2: Generate 90-day financial forecast.
+    
+    Accepts historical transaction data with optional income/balance context.
+    Returns projections with confidence intervals and AI insights.
+    """
+    try:
+        if not request.transactions:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail={
+                    "success": False,
+                    "error_code": "NO_TRANSACTIONS",
+                    "message": "At least one transaction is required to generate a forecast"
+                }
+            )
+        
+        result = await forecaster.generate_forecast(request)
+        logger.info(
+            f"Generated forecast {result.forecast_id} with "
+            f"{len(result.data_points)} data points, "
+            f"runway: {result.metrics.runway_months} months"
+        )
+        return result
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.exception(f"Forecast generation error: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "success": False,
+                "error_code": "FORECAST_ERROR",
+                "message": "An error occurred while generating the forecast",
+                "details": {"error": str(e)}
+            }
+        )
 
 
 @router.post("/advise")

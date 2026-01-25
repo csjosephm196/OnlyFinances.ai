@@ -596,3 +596,225 @@ class RecurringExpensesRequest(BaseModel):
         transactions: List of categorized transactions to analyze
     """
     transactions: list[CategorizedTransaction]
+
+
+# ============================================================================
+# Financial Forecasting Models (Layer 2)
+# ============================================================================
+
+class ForecastDataPoint(BaseModel):
+    """Single point in forecast timeline.
+    
+    Attributes:
+        date: The date for this data point
+        actual: Historical actual cash flow value (null for future dates)
+        predicted: Forecasted value (null for historical dates)
+        upper_bound: 95% confidence interval upper bound
+        lower_bound: 95% confidence interval lower bound
+        cumulative_balance: Running balance at this date
+    """
+    date: date
+    actual: Optional[float] = None
+    predicted: Optional[float] = None
+    upper_bound: Optional[float] = None
+    lower_bound: Optional[float] = None
+    cumulative_balance: Optional[float] = None
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "date": "2026-02-15",
+                "actual": None,
+                "predicted": 52000.00,
+                "upper_bound": 58000.00,
+                "lower_bound": 46000.00,
+                "cumulative_balance": 52000.00
+            }
+        }
+
+
+class ForecastInsightType(str, Enum):
+    """Types of forecast insights."""
+    WARNING = "warning"
+    SUCCESS = "success"
+    INFO = "info"
+
+
+class ForecastInsight(BaseModel):
+    """AI-generated insight card for the forecast.
+    
+    Attributes:
+        type: Visual type (warning, success, info)
+        title: Short headline for the insight
+        description: Detailed explanation
+        metric_value: Optional key metric to highlight
+    """
+    type: ForecastInsightType
+    title: str
+    description: str
+    metric_value: Optional[str] = None
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "type": "warning",
+                "title": "Liquidity Risk Detected",
+                "description": "Large tax payment ($12k) due in 45 days. Current projection shows buffer dipping below 10% threshold.",
+                "metric_value": "$12,000"
+            }
+        }
+
+
+class ForecastMetrics(BaseModel):
+    """Key metrics derived from the forecast.
+    
+    Attributes:
+        runway_months: Estimated months of runway at current burn rate
+        safety_buffer: Recommended safety buffer amount
+        avg_daily_revenue: Average daily revenue from historical data
+        avg_daily_expense: Average daily expenses from historical data
+        avg_daily_net: Average daily net cash flow
+        projected_end_balance: Projected balance at end of forecast period
+        current_balance: Current/starting balance
+    """
+    runway_months: float
+    safety_buffer: float
+    avg_daily_revenue: float
+    avg_daily_expense: float
+    avg_daily_net: float
+    projected_end_balance: float
+    current_balance: float
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "runway_months": 14.2,
+                "safety_buffer": 24500.00,
+                "avg_daily_revenue": 150.00,
+                "avg_daily_expense": 120.00,
+                "avg_daily_net": 30.00,
+                "projected_end_balance": 72000.00,
+                "current_balance": 52000.00
+            }
+        }
+
+
+class IncomeContext(BaseModel):
+    """Income statement context for forecast generation.
+    
+    Attributes:
+        total_revenue: Total revenue from income statement
+        total_expenses: Total expenses from income statement
+        net_income: Net income (revenue - expenses)
+        revenue_by_category: Revenue breakdown by category
+        expense_by_category: Expense breakdown by category
+    """
+    total_revenue: float = 0.0
+    total_expenses: float = 0.0
+    net_income: float = 0.0
+    revenue_by_category: Optional[dict[str, float]] = None
+    expense_by_category: Optional[dict[str, float]] = None
+
+
+class BalanceContext(BaseModel):
+    """Balance sheet context for forecast generation.
+    
+    Attributes:
+        total_assets: Total assets value
+        total_liabilities: Total liabilities value
+        equity: Net equity (assets - liabilities)
+        liquid_assets: Cash and liquid assets for runway calculation
+    """
+    total_assets: float = 0.0
+    total_liabilities: float = 0.0
+    equity: float = 0.0
+    liquid_assets: float = 0.0
+
+
+class ForecastRequest(BaseModel):
+    """Request body for generating a financial forecast.
+    
+    Attributes:
+        transactions: List of historical categorized transactions
+        income_context: Optional income statement summary data
+        balance_context: Optional balance sheet summary data
+        current_balance: Starting balance for projections
+        forecast_days: Number of days to forecast (default 90)
+    """
+    transactions: list[CategorizedTransaction]
+    income_context: Optional[IncomeContext] = None
+    balance_context: Optional[BalanceContext] = None
+    current_balance: float = 0.0
+    forecast_days: int = Field(default=90, ge=30, le=365)
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "transactions": [],
+                "income_context": {
+                    "total_revenue": 3975.40,
+                    "total_expenses": 3113.18,
+                    "net_income": 862.22
+                },
+                "balance_context": {
+                    "liquid_assets": 19880.72,
+                    "equity": 128830.32
+                },
+                "current_balance": 7380.72,
+                "forecast_days": 90
+            }
+        }
+
+
+class ForecastResult(BaseModel):
+    """Complete response from forecast generation.
+    
+    Attributes:
+        success: Whether forecast generation succeeded
+        forecast_id: Unique identifier for this forecast
+        generated_at: Timestamp of generation
+        data_points: List of forecast data points (historical + projected)
+        metrics: Key forecast metrics
+        insights: AI-generated insight cards
+        confidence_level: Statistical confidence level (default 0.95)
+        data_sources: List of data sources used (transactions, income, balance)
+        historical_start: Start date of historical data
+        historical_end: End date of historical data (today marker)
+        forecast_end: End date of forecast period
+    """
+    success: bool = True
+    forecast_id: str
+    generated_at: datetime
+    data_points: list[ForecastDataPoint]
+    metrics: ForecastMetrics
+    insights: list[ForecastInsight]
+    confidence_level: float = Field(default=0.95, ge=0.5, le=0.99)
+    data_sources: list[str]
+    historical_start: date
+    historical_end: date
+    forecast_end: date
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "forecast_id": "fc_abc123",
+                "generated_at": "2026-01-24T20:00:00Z",
+                "data_points": [],
+                "metrics": {
+                    "runway_months": 14.2,
+                    "safety_buffer": 24500.00,
+                    "avg_daily_revenue": 150.00,
+                    "avg_daily_expense": 120.00,
+                    "avg_daily_net": 30.00,
+                    "projected_end_balance": 72000.00,
+                    "current_balance": 52000.00
+                },
+                "insights": [],
+                "confidence_level": 0.95,
+                "data_sources": ["transactions", "income_statement"],
+                "historical_start": "2025-10-01",
+                "historical_end": "2026-01-24",
+                "forecast_end": "2026-04-24"
+            }
+        }
