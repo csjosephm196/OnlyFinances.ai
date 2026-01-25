@@ -104,25 +104,37 @@ export function Layer2Forecaster() {
     }
   }, [processingResult, incomeStatementData, balanceSheetData, user]);
 
-  // Check if we should auto-generate forecast
+  // Check if we should auto-generate/regenerate forecast when data changes
   useEffect(() => {
-    if (processingResult?.transactions &&
-      processingResult.transactions.length > 0 &&
-      !forecastResult &&
-      !isLoading &&
-      !isGenerating) {
-      // Check if saved forecast needs regeneration
-      const needsRegeneration = shouldRegenerateForecast(
-        savedForecast,
-        processingResult.transactions.length,
-        processingResult.date_range
-      );
-
-      if (needsRegeneration) {
-        handleGenerateForecast();
-      }
+    // Skip if no data or already loading
+    if (!processingResult?.transactions ||
+      processingResult.transactions.length === 0 ||
+      isLoading ||
+      isGenerating) {
+      return;
     }
-  }, [processingResult, savedForecast, forecastResult, isLoading, isGenerating]);
+
+    // Check if saved forecast needs regeneration based on data changes
+    const needsRegeneration = shouldRegenerateForecast(
+      savedForecast,
+      processingResult.transactions.length,
+      processingResult.date_range
+    );
+
+    // Auto-generate if:
+    // 1. No forecast exists at all
+    // 2. Data has changed significantly (merge/override detected)
+    if (!forecastResult || needsRegeneration) {
+      console.log('📊 Forecast regeneration triggered:', {
+        hasExisting: !!forecastResult,
+        needsRegeneration,
+        transactionCount: processingResult.transactions.length,
+        dateRange: processingResult.date_range
+      });
+      handleGenerateForecast();
+    }
+    // Note: We intentionally include processingResult in deps to detect CSV uploads
+  }, [processingResult?.transactions?.length, processingResult?.date_range?.end, savedForecast, isLoading, isGenerating]);
 
   // Transform forecast data for chart
   const chartData = useMemo<ChartDataPoint[]>(() => {

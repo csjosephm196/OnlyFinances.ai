@@ -9,12 +9,17 @@ import { SpendingPieChart } from './components/charts/SpendingPieChart';
 import { MonthlyTrendChart } from './components/charts/MonthlyTrendChart';
 import { CATEGORY_DISPLAY } from './constants/categories';
 import { SpendingCategory } from './types/budget';
-import { ArrowUpRight, ArrowDownRight, Wallet, Activity, CalendarClock, TrendingUp, Upload, FileText, PieChart } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Wallet, Activity, CalendarClock, TrendingUp, Upload, FileText, PieChart, BarChart3 } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 import { useAuth } from './hooks/useAuth';
+import { IncomeStatementDashboard } from './components/IncomeStatementDashboard';
+import { RecurringExpensesCard } from './components/RecurringExpensesCard';
 
-function DashboardOverview({ onNavigate, highlightedElement }: { onNavigate?: (layer: string) => void; highlightedElement?: string | null }) {
+function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: { onNavigate?: (layer: string) => void; highlightedElement?: string | null; initialViewMode?: 'transactions' | 'incomeStatement' }) {
   const { processingResult, incomeStatementData } = useBudget();
+
+  // View mode state: 'transactions' or 'incomeStatement'
+  const [viewMode, setViewMode] = useState<'transactions' | 'incomeStatement'>(initialViewMode || 'transactions');
 
   // Calculate metrics from real data
   const totalSpent = processingResult
@@ -32,8 +37,8 @@ function DashboardOverview({ onNavigate, highlightedElement }: { onNavigate?: (l
   // Calculate date range
   const dateRange = processingResult?.date_range;
 
-  // If no data, show upload prompt
-  if (!processingResult) {
+  // If no data at all, show upload prompt
+  if (!processingResult && !incomeStatementData) {
     return (
       <div className="space-y-8 animate-in fade-in duration-500">
         <div className="flex items-center justify-between">
@@ -70,13 +75,95 @@ function DashboardOverview({ onNavigate, highlightedElement }: { onNavigate?: (l
           <PlaceholderCard title="Top Category" icon={TrendingUp} />
           <PlaceholderCard title="Date Range" icon={CalendarClock} />
         </div>
-
-        {/* Income Statement Preview */}
-        {incomeStatementData && (
-          <IncomeStatementSummary data={incomeStatementData} />
-        )}
       </div>
     );
+  }
+
+  // If viewing income statement mode and we have income statement data
+  if (viewMode === 'incomeStatement' && incomeStatementData) {
+    return (
+      <div className="space-y-8 animate-in fade-in duration-500">
+        {/* Header with toggle button */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Income Statement Analysis</h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-1">
+              Revenue and expense breakdown from {incomeStatementData.period.start} to {incomeStatementData.period.end}
+            </p>
+          </div>
+          <div className="flex space-x-3">
+            <button className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm">
+              Export Report
+            </button>
+            <button
+              onClick={() => setViewMode('transactions')}
+              className="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg text-sm hover:bg-indigo-700 transition-colors shadow-sm flex items-center"
+            >
+              <BarChart3 className="w-4 h-4 mr-2" />
+              Analyze Transactions
+            </button>
+          </div>
+        </div>
+
+        {/* Render the Income Statement Dashboard */}
+        <IncomeStatementDashboard data={incomeStatementData} highlightedElement={highlightedElement} />
+      </div>
+    );
+  }
+
+  // Default: Transaction analysis view
+  // If no transaction data but has income statement, show prompt to switch
+  if (!processingResult && incomeStatementData) {
+    return (
+      <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-slate-900 dark:text-slate-100">Financial Overview</h1>
+            <p className="text-slate-500 dark:text-slate-400 mt-1">No transaction data available. View your income statement analysis instead.</p>
+          </div>
+          <div className="flex space-x-3">
+            <button
+              onClick={() => setViewMode('incomeStatement')}
+              className="px-4 py-2 bg-purple-600 text-white font-medium rounded-lg text-sm hover:bg-purple-700 transition-colors shadow-sm flex items-center"
+            >
+              <TrendingUp className="w-4 h-4 mr-2" />
+              Analyze Income Statement
+            </button>
+          </div>
+        </div>
+
+        {/* Empty State for Transactions */}
+        <div
+          onClick={() => onNavigate?.('fiscalcore')}
+          className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-indigo-100 dark:border-indigo-900 rounded-xl p-12 text-center cursor-pointer hover:shadow-lg hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-200 group"
+        >
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-white dark:bg-slate-800 rounded-full shadow-sm mb-6 group-hover:scale-105 transition-transform">
+            <Upload className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
+          </div>
+          <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">No Transaction Data</h2>
+          <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto mb-6">
+            Upload your bank statements in Fiscal Core to see your transaction analysis and spending breakdown.
+          </p>
+          <p className="mt-4 text-sm text-indigo-600 dark:text-indigo-400 font-medium group-hover:underline">Click here to upload transactions →</p>
+        </div>
+
+        {/* Placeholder Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 opacity-50">
+          <PlaceholderCard title="Total Spending" icon={Wallet} />
+          <PlaceholderCard title="Transactions" icon={Activity} />
+          <PlaceholderCard title="Top Category" icon={TrendingUp} />
+          <PlaceholderCard title="Date Range" icon={CalendarClock} />
+        </div>
+
+        {/* Income Statement Summary Preview */}
+        <IncomeStatementSummary data={incomeStatementData} />
+      </div>
+    );
+  }
+
+  // At this point, processingResult must exist (we've ruled out all other cases)
+  if (!processingResult) {
+    return null; // TypeScript guard - should never reach here
   }
 
   return (
@@ -90,8 +177,23 @@ function DashboardOverview({ onNavigate, highlightedElement }: { onNavigate?: (l
           <button className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm">
             Export Report
           </button>
+          <button
+            onClick={() => {
+              if (incomeStatementData) {
+                setViewMode('incomeStatement');
+              } else {
+                // Navigate to Fiscal Core with income statement tab
+                onNavigate?.('fiscalcore-incomestatement');
+              }
+            }}
+            className="px-4 py-2 bg-purple-600 text-white font-medium rounded-lg text-sm hover:bg-purple-700 transition-colors shadow-sm flex items-center"
+          >
+            <TrendingUp className="w-4 h-4 mr-2" />
+            Analyze Income Statement
+          </button>
         </div>
       </div>
+
 
       {/* Metric Cards with Real Data */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -133,7 +235,7 @@ function DashboardOverview({ onNavigate, highlightedElement }: { onNavigate?: (l
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Spending by Category Pie Chart */}
-        <div 
+        <div
           id="chart-pie"
           className={`bg-gradient-to-br from-slate-50 to-indigo-50/30 dark:from-slate-800 dark:to-indigo-950/20 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'chart-pie' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}`}
         >
@@ -144,7 +246,7 @@ function DashboardOverview({ onNavigate, highlightedElement }: { onNavigate?: (l
         </div>
 
         {/* Monthly Trends Chart */}
-        <div 
+        <div
           id="chart-monthly-trends"
           className={`bg-gradient-to-br from-slate-50 to-purple-50/30 dark:from-slate-800 dark:to-purple-950/20 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'chart-monthly-trends' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}`}
         >
@@ -156,7 +258,7 @@ function DashboardOverview({ onNavigate, highlightedElement }: { onNavigate?: (l
       </div>
 
       {/* Top Spending Categories */}
-      <div 
+      <div
         id="spending-breakdown"
         className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'spending-breakdown' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}`}
       >
@@ -193,6 +295,9 @@ function DashboardOverview({ onNavigate, highlightedElement }: { onNavigate?: (l
             })}
         </div>
       </div>
+
+      {/* Recurring Expenses Detection */}
+      <RecurringExpensesCard transactions={processingResult.transactions} />
 
       {/* Income Statement Summary */}
       {incomeStatementData && (
@@ -276,10 +381,24 @@ function MetricCard({ title, value, subtitle, icon: Icon, color }: { title: stri
 function AppContent() {
   const [activeLayer, setActiveLayer] = useState('dashboard');
   const [highlightedElement, setHighlightedElement] = useState<string | null>(null);
+  const [fiscalCoreDefaultTab, setFiscalCoreDefaultTab] = useState<'transactions' | 'balancesheet' | 'incomestatement' | undefined>(undefined);
+  const [dashboardInitialView, setDashboardInitialView] = useState<'transactions' | 'incomeStatement' | undefined>(undefined);
 
   const handleSetActiveLayer = (layer: string, elementId?: string) => {
-    setActiveLayer(layer);
-    
+    // Handle fiscalcore-{tab} navigation pattern
+    if (layer.startsWith('fiscalcore-')) {
+      const tab = layer.replace('fiscalcore-', '') as 'transactions' | 'balancesheet' | 'incomestatement';
+      setFiscalCoreDefaultTab(tab);
+      setActiveLayer('fiscalcore');
+    } else if (layer === 'dashboard-incomestatement') {
+      setDashboardInitialView('incomeStatement');
+      setActiveLayer('dashboard');
+    } else {
+      setFiscalCoreDefaultTab(undefined);
+      setDashboardInitialView(undefined); // Reset unless specifically set
+      setActiveLayer(layer);
+    }
+
     if (elementId) {
       // Wait for the component to render, then scroll and highlight
       setTimeout(() => {
@@ -287,7 +406,7 @@ function AppContent() {
         if (element) {
           element.scrollIntoView({ behavior: 'smooth', block: 'center' });
           setHighlightedElement(elementId);
-          
+
           // Remove highlight after 2 seconds
           setTimeout(() => {
             setHighlightedElement(null);
@@ -299,8 +418,8 @@ function AppContent() {
 
   const renderLayer = () => {
     switch (activeLayer) {
-      case 'dashboard': return <DashboardOverview onNavigate={handleSetActiveLayer} highlightedElement={highlightedElement} />;
-      case 'fiscalcore': return <FiscalCore onNavigate={handleSetActiveLayer} />;
+      case 'dashboard': return <DashboardOverview onNavigate={handleSetActiveLayer} highlightedElement={highlightedElement} initialViewMode={dashboardInitialView} />;
+      case 'fiscalcore': return <FiscalCore onNavigate={handleSetActiveLayer} defaultTab={fiscalCoreDefaultTab} />;
       case 'layer2': return <Layer2Forecaster />;
       case 'layer3': return <Layer3Advisor />;
       case 'assets': return <AssetValuator />;
