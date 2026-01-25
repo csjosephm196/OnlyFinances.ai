@@ -13,12 +13,13 @@ import { ArrowUpRight, ArrowDownRight, Wallet, Activity, CalendarClock, Trending
 import { LoginPage } from './components/LoginPage';
 import { useAuth } from './hooks/useAuth';
 import { IncomeStatementDashboard } from './components/IncomeStatementDashboard';
+import { RecurringExpensesCard } from './components/RecurringExpensesCard';
 
-function DashboardOverview({ onNavigate, highlightedElement }: { onNavigate?: (layer: string) => void; highlightedElement?: string | null }) {
+function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: { onNavigate?: (layer: string) => void; highlightedElement?: string | null; initialViewMode?: 'transactions' | 'incomeStatement' }) {
   const { processingResult, incomeStatementData } = useBudget();
 
   // View mode state: 'transactions' or 'incomeStatement'
-  const [viewMode, setViewMode] = useState<'transactions' | 'incomeStatement'>('transactions');
+  const [viewMode, setViewMode] = useState<'transactions' | 'incomeStatement'>(initialViewMode || 'transactions');
 
   // Calculate metrics from real data
   const totalSpent = processingResult
@@ -295,6 +296,9 @@ function DashboardOverview({ onNavigate, highlightedElement }: { onNavigate?: (l
         </div>
       </div>
 
+      {/* Recurring Expenses Detection */}
+      <RecurringExpensesCard transactions={processingResult.transactions} />
+
       {/* Income Statement Summary */}
       {incomeStatementData && (
         <IncomeStatementSummary data={incomeStatementData} />
@@ -378,6 +382,7 @@ function AppContent() {
   const [activeLayer, setActiveLayer] = useState('dashboard');
   const [highlightedElement, setHighlightedElement] = useState<string | null>(null);
   const [fiscalCoreDefaultTab, setFiscalCoreDefaultTab] = useState<'transactions' | 'balancesheet' | 'incomestatement' | undefined>(undefined);
+  const [dashboardInitialView, setDashboardInitialView] = useState<'transactions' | 'incomeStatement' | undefined>(undefined);
 
   const handleSetActiveLayer = (layer: string, elementId?: string) => {
     // Handle fiscalcore-{tab} navigation pattern
@@ -385,8 +390,12 @@ function AppContent() {
       const tab = layer.replace('fiscalcore-', '') as 'transactions' | 'balancesheet' | 'incomestatement';
       setFiscalCoreDefaultTab(tab);
       setActiveLayer('fiscalcore');
+    } else if (layer === 'dashboard-incomestatement') {
+      setDashboardInitialView('incomeStatement');
+      setActiveLayer('dashboard');
     } else {
       setFiscalCoreDefaultTab(undefined);
+      setDashboardInitialView(undefined); // Reset unless specifically set
       setActiveLayer(layer);
     }
 
@@ -409,7 +418,7 @@ function AppContent() {
 
   const renderLayer = () => {
     switch (activeLayer) {
-      case 'dashboard': return <DashboardOverview onNavigate={handleSetActiveLayer} highlightedElement={highlightedElement} />;
+      case 'dashboard': return <DashboardOverview onNavigate={handleSetActiveLayer} highlightedElement={highlightedElement} initialViewMode={dashboardInitialView} />;
       case 'fiscalcore': return <FiscalCore onNavigate={handleSetActiveLayer} defaultTab={fiscalCoreDefaultTab} />;
       case 'layer2': return <Layer2Forecaster />;
       case 'layer3': return <Layer3Advisor />;

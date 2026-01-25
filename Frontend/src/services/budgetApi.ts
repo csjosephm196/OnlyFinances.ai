@@ -1,8 +1,9 @@
 // services/budgetApi.ts - API service for CSV processing
 
-import { ProcessingResponse, ProcessingResult } from '../types/budget';
+import { ProcessingResponse, ProcessingResult, CategorizedTransaction } from '../types/budget';
 import { BalanceSheetResponse, BalanceSheetData } from '../types/balanceSheet';
 import { IncomeStatementResponse, IncomeStatementData } from '../types/incomeStatement';
+import { RecurringExpensesResponse, RecurringExpensesResult } from '../types/recurringExpense';
 
 const API_BASE_URL = 'https://demo-backend-bqyy.onrender.com';
 
@@ -113,3 +114,36 @@ export async function uploadIncomeStatement(file: File): Promise<IncomeStatement
     }
 }
 
+/**
+ * Detect recurring expenses from transaction data
+ * Connects to backend endpoint: POST /v1/detect-recurring
+ */
+export async function detectRecurringExpenses(
+    transactions: CategorizedTransaction[]
+): Promise<RecurringExpensesResponse> {
+    try {
+        const response = await fetch(`${API_BASE_URL}/v1/detect-recurring`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ transactions }),
+        });
+        const data = await response.json();
+        if (!response.ok) {
+            return {
+                success: false,
+                error_code: data.detail?.error_code || 'UNKNOWN_ERROR',
+                message: data.detail?.message || 'An unexpected error occurred',
+                details: data.detail?.details,
+            };
+        }
+        return data as RecurringExpensesResult;
+    } catch (error) {
+        return {
+            success: false,
+            error_code: 'NETWORK_ERROR',
+            message: error instanceof Error ? error.message : 'Network request failed',
+        };
+    }
+}

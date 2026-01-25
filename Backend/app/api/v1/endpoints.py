@@ -17,6 +17,7 @@ from app.services.ai import (
     tax_agent,
     balance_sheet_processor,
     income_statement_processor,
+    recurring_detector,
 )
 from app.services.ai.models import (
     ProcessingResult, 
@@ -25,6 +26,8 @@ from app.services.ai.models import (
     ChatResponse,
     BalanceSheetData,
     IncomeStatementData,
+    RecurringExpensesResult,
+    RecurringExpensesRequest,
 )
 
 logger = logging.getLogger(__name__)
@@ -502,6 +505,64 @@ async def process_income_statement_endpoint(
                 "success": False,
                 "error_code": "PROCESSING_ERROR",
                 "message": "An unexpected error occurred while processing the file",
+                "details": {"error": str(e)}
+            }
+        )
+
+
+@router.post(
+    "/detect-recurring",
+    response_model=RecurringExpensesResult,
+    responses={
+        400: {"model": ProcessingError, "description": "Invalid request"},
+        500: {"model": ProcessingError, "description": "Internal processing error"},
+    },
+    summary="Detect Recurring Expenses",
+    description="""
+    Analyze transactions to detect recurring expenses (subscriptions, bills, etc.).
+    
+    The endpoint accepts a list of categorized transactions and uses AI to identify
+    patterns indicating recurring charges.
+    
+    **Detection criteria:**
+    - Groups transactions by normalized merchant name
+    - Analyzes time intervals between charges
+    - Classifies frequency patterns (weekly, monthly, quarterly, yearly)
+    - Calculates confidence scores based on consistency
+    
+    **Returns:**
+    - List of detected recurring expenses with merchant, amount, frequency
+    - Monthly total for all recurring expenses
+    - Predicted next charge dates
+    """,
+)
+async def detect_recurring_endpoint(
+    request: RecurringExpensesRequest
+) -> RecurringExpensesResult:
+    """
+    Detect recurring expenses from transaction history.
+    
+    Accepts a list of categorized transactions and returns detected
+    recurring expenses with frequency and next expected charge date.
+    """
+    try:
+        result = await recurring_detector.detect_recurring_expenses(
+            request.transactions
+        )
+        logger.info(
+            f"Detected {result.total_detected} recurring expenses, "
+            f"monthly total: ${result.monthly_total:.2f}"
+        )
+        return result
+        
+    except Exception as e:
+        logger.exception(f"Error detecting recurring expenses: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail={
+                "success": False,
+                "error_code": "DETECTION_ERROR",
+                "message": "An error occurred while detecting recurring expenses",
                 "details": {"error": str(e)}
             }
         )
