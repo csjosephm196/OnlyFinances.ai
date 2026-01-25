@@ -30,6 +30,8 @@
             "@radix-ui/react-toggle-group": "^1.1.2",
             "@radix-ui/react-tooltip": "^1.1.8",
             "@tailwindcss/vite": "^4.1.18",
+            "@types/canvas-confetti": "^1.9.0",
+            "canvas-confetti": "^1.9.4",
             "class-variance-authority": "^0.7.1",
             "clsx": "*",
             "cmdk": "^1.1.1",

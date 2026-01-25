@@ -99,17 +99,17 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
   // Get user's first name from display name or email
   const getUserFirstName = () => {
     if (!user) return '';
-    
+
     // Try to get from displayName first
     if (user.displayName) {
       return user.displayName.split(' ')[0];
     }
-    
+
     // Fallback to email username
     if (user.email) {
       return user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1);
     }
-    
+
     return 'User';
   };
 
@@ -117,7 +117,7 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
   const getPossessiveName = () => {
     const firstName = getUserFirstName();
     if (!firstName) return '';
-    
+
     // If name ends with 's', just add apostrophe
     if (firstName.toLowerCase().endsWith('s')) {
       return `${firstName}'`;
@@ -136,13 +136,13 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
       >
         <div className={`p-5 flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
           <div className={`flex items-center ${sidebarOpen ? 'space-x-3 flex-1' : ''}`}>
-            <button 
+            <button
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="flex-shrink-0 group"
             >
               <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-500 dark:via-purple-500 dark:to-pink-500 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 flex-shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-indigo-500/50 group-hover:ring-2 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 group-hover:ring-offset-2 group-hover:ring-offset-white dark:group-hover:ring-offset-slate-800 relative cursor-pointer animate-gradient bg-[length:200%_200%]">
                 <Sparkles className="w-6 h-6 text-white transition-transform duration-200 group-hover:rotate-12" />
-                
+
                 {/* Visual indicator at bottom */}
                 <div className={`absolute -bottom-2 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-slate-900 dark:bg-slate-700 text-white text-[10px] font-medium rounded opacity-0 group-hover:opacity-100 transition-all duration-200 whitespace-nowrap ${!sidebarOpen ? 'group-hover:-bottom-3' : ''}`}>
                   {sidebarOpen ? '←' : '→'}
@@ -194,7 +194,7 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
               )}
             </div>
           ) : (
-            <button 
+            <button
               onClick={() => {
                 setSidebarOpen(true);
                 setIsSearchOpen(true);
@@ -238,7 +238,7 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
         </nav>
 
         <div className={`p-4 border-t border-slate-100 dark:border-slate-700 ${!sidebarOpen && 'flex justify-center'}`}>
-          <button 
+          <button
             onClick={() => setProfileModalOpen(true)}
             className="flex items-center w-full group hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg p-2 -m-2 transition-colors"
           >

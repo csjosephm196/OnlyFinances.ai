@@ -2,6 +2,7 @@ import React, { useState, useRef } from 'react';
 import { Upload, CheckCircle2, ArrowRight, FileSpreadsheet, XCircle, DollarSign, CreditCard, Layers, Plus, RefreshCw } from 'lucide-react';
 import { motion } from 'motion/react';
 import { uploadBalanceSheet } from '../services/budgetApi';
+import confetti from 'canvas-confetti';
 import { BalanceSheetData, BalanceSheetItem } from '../types/balanceSheet';
 import { useBudget, MergeResult } from '../context/BudgetContext';
 
@@ -55,6 +56,16 @@ export function BalanceSheetUploader({ onNavigate }: { onNavigate?: (page: strin
                 }
             } else {
                 setError(response.message || 'Failed to process balance sheet');
+            }
+
+            // Trigger confetti on success
+            if (response.success) {
+                confetti({
+                    particleCount: 150,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#10b981', '#34d399', '#4f46e5']
+                });
             }
         } catch (err) {
             setError('An unexpected error occurred. Please try again.');
@@ -144,22 +155,20 @@ export function BalanceSheetUploader({ onNavigate }: { onNavigate?: (page: strin
                     <div className="inline-flex items-center bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
                         <button
                             onClick={(e) => { e.stopPropagation(); setMergeMode(false); }}
-                            className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                                !mergeMode 
-                                    ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm' 
+                            className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-all ${!mergeMode
+                                    ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm'
                                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
-                            }`}
+                                }`}
                         >
                             <RefreshCw className="w-4 h-4 mr-1.5" />
                             Replace
                         </button>
                         <button
                             onClick={(e) => { e.stopPropagation(); setMergeMode(true); }}
-                            className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-all ${
-                                mergeMode 
-                                    ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm' 
+                            className={`flex items-center px-3 py-1.5 rounded-md text-sm font-medium transition-all ${mergeMode
+                                    ? 'bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-100 shadow-sm'
                                     : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
-                            }`}
+                                }`}
                         >
                             <Plus className="w-4 h-4 mr-1.5" />
                             Add to Existing
@@ -167,8 +176,8 @@ export function BalanceSheetUploader({ onNavigate }: { onNavigate?: (page: strin
                     </div>
                 </div>
                 <p className="text-center text-xs text-slate-400 dark:text-slate-500 mt-2">
-                    {mergeMode 
-                        ? 'Values will be added to existing items (same name+type summed together)' 
+                    {mergeMode
+                        ? 'Values will be added to existing items (same name+type summed together)'
                         : 'Uploading will replace your current balance sheet data'}
                 </p>
 
@@ -301,7 +310,7 @@ export function BalanceSheetUploader({ onNavigate }: { onNavigate?: (page: strin
                                     ${balanceSheetData.equity.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                                 </span>
                             </p>
-                            <button 
+                            <button
                                 onClick={() => onNavigate?.('assets')}
                                 className="flex items-center px-4 py-2 bg-emerald-600 text-white text-sm font-medium rounded-lg hover:bg-emerald-700 transition-colors shadow-sm shadow-emerald-200"
                             >
