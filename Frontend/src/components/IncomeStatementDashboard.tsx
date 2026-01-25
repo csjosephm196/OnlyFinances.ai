@@ -4,42 +4,23 @@ import React from 'react';
 import { TrendingUp, TrendingDown, DollarSign, Percent, BarChart3 } from 'lucide-react';
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip, Legend } from 'recharts';
 import { IncomeStatementData, RevenueCategory, ExpenseCategory } from '../types/incomeStatement';
+import { REVENUE_DISPLAY, EXPENSE_DISPLAY } from '../constants/categories';
 
 interface IncomeStatementDashboardProps {
     data: IncomeStatementData;
     highlightedElement?: string | null;
+    revenueChartRef?: React.RefObject<HTMLDivElement | null>;
+    expenseChartRef?: React.RefObject<HTMLDivElement | null>;
 }
 
-// Display configuration for revenue categories
-const REVENUE_DISPLAY: Record<RevenueCategory, { icon: string; label: string; color: string }> = {
-    wages_salary: { icon: '💵', label: 'Wages & Salary', color: '#22C55E' },
-    sales: { icon: '🛒', label: 'Sales', color: '#10B981' },
-    services: { icon: '🔧', label: 'Services', color: '#3B82F6' },
-    interest_income: { icon: '🏦', label: 'Interest Income', color: '#8B5CF6' },
-    investment_income: { icon: '📈', label: 'Investment Income', color: '#06B6D4' },
-    rental_income: { icon: '🏠', label: 'Rental Income', color: '#F59E0B' },
-    royalties: { icon: '👑', label: 'Royalties', color: '#EC4899' },
-    other_revenue: { icon: '💰', label: 'Other Revenue', color: '#6B7280' },
-};
+// No local display constants needed anymore
 
-// Display configuration for expense categories
-const EXPENSE_DISPLAY: Record<ExpenseCategory, { icon: string; label: string; color: string }> = {
-    cost_of_goods_sold: { icon: '📦', label: 'Cost of Goods Sold', color: '#EF4444' },
-    salaries_wages: { icon: '👥', label: 'Salaries & Wages', color: '#F97316' },
-    rent: { icon: '🏢', label: 'Rent', color: '#F59E0B' },
-    utilities: { icon: '💡', label: 'Utilities', color: '#84CC16' },
-    marketing: { icon: '📢', label: 'Marketing', color: '#06B6D4' },
-    insurance: { icon: '🛡️', label: 'Insurance', color: '#3B82F6' },
-    depreciation: { icon: '📉', label: 'Depreciation', color: '#8B5CF6' },
-    interest_expense: { icon: '💳', label: 'Interest Expense', color: '#EC4899' },
-    taxes: { icon: '🏛️', label: 'Taxes', color: '#6366F1' },
-    professional_fees: { icon: '👔', label: 'Professional Fees', color: '#14B8A6' },
-    office_supplies: { icon: '📎', label: 'Office Supplies', color: '#A855F7' },
-    travel: { icon: '✈️', label: 'Travel', color: '#F43F5E' },
-    other_expenses: { icon: '📋', label: 'Other Expenses', color: '#6B7280' },
-};
-
-export function IncomeStatementDashboard({ data, highlightedElement }: IncomeStatementDashboardProps) {
+export function IncomeStatementDashboard({
+    data,
+    highlightedElement,
+    revenueChartRef,
+    expenseChartRef
+}: IncomeStatementDashboardProps) {
     const profitMargin = data.revenues.total > 0
         ? ((data.net_income / data.revenues.total) * 100).toFixed(1)
         : '0.0';
@@ -114,6 +95,7 @@ export function IncomeStatementDashboard({ data, highlightedElement }: IncomeSta
                 {/* Revenue Breakdown */}
                 <div
                     id="revenue-breakdown"
+                    ref={revenueChartRef}
                     className={`bg-gradient-to-br from-slate-50 to-emerald-50/30 dark:from-slate-800 dark:to-emerald-950/20 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'revenue-breakdown' ? 'ring-4 ring-emerald-400 ring-offset-4' : ''}`}
                 >
                     <div className="flex items-center justify-between mb-6">
@@ -136,6 +118,7 @@ export function IncomeStatementDashboard({ data, highlightedElement }: IncomeSta
                 {/* Expense Breakdown */}
                 <div
                     id="expense-breakdown"
+                    ref={expenseChartRef}
                     className={`bg-gradient-to-br from-slate-50 to-rose-50/30 dark:from-slate-800 dark:to-rose-950/20 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'expense-breakdown' ? 'ring-4 ring-rose-400 ring-offset-4' : ''}`}
                 >
                     <div className="flex items-center justify-between mb-6">

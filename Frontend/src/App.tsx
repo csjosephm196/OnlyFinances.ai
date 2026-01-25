@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Layout } from './components/Layout';
 import { Layer2Forecaster } from './components/Layer2Forecaster';
 import { Layer3Advisor } from './components/Layer3Advisor';
@@ -9,17 +9,62 @@ import { SpendingPieChart } from './components/charts/SpendingPieChart';
 import { MonthlyTrendChart } from './components/charts/MonthlyTrendChart';
 import { CATEGORY_DISPLAY } from './constants/categories';
 import { SpendingCategory } from './types/budget';
-import { ArrowUpRight, ArrowDownRight, Wallet, Activity, CalendarClock, TrendingUp, Upload, FileText, PieChart, BarChart3 } from 'lucide-react';
+import { ArrowUpRight, ArrowDownRight, Wallet, Activity, CalendarClock, TrendingUp, Upload, FileText, PieChart, BarChart3, Download, Loader2 } from 'lucide-react';
 import { LoginPage } from './components/LoginPage';
 import { useAuth } from './hooks/useAuth';
 import { IncomeStatementDashboard } from './components/IncomeStatementDashboard';
 import { RecurringExpensesCard } from './components/RecurringExpensesCard';
+import { generateTransactionReport, generateIncomeStatementReport } from './services/pdfExportService';
 
 function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: { onNavigate?: (layer: string) => void; highlightedElement?: string | null; initialViewMode?: 'transactions' | 'incomeStatement' }) {
   const { processingResult, incomeStatementData } = useBudget();
 
   // View mode state: 'transactions' or 'incomeStatement'
   const [viewMode, setViewMode] = useState<'transactions' | 'incomeStatement'>(initialViewMode || 'transactions');
+
+  // PDF export state
+  const [isExporting, setIsExporting] = useState(false);
+  const pieChartRef = useRef<HTMLDivElement>(null);
+  const barChartRef = useRef<HTMLDivElement>(null);
+  const revenueChartRef = useRef<HTMLDivElement>(null);
+  const expenseChartRef = useRef<HTMLDivElement>(null);
+
+  // PDF export handlers
+  const handleExportTransactionPDF = async () => {
+    if (!processingResult) return;
+    setIsExporting(true);
+    try {
+      await generateTransactionReport(processingResult, {
+        includeCharts: true,
+        chartRefs: {
+          pieChart: pieChartRef.current,
+          barChart: barChartRef.current,
+        },
+      });
+    } catch (err) {
+      console.error('Failed to export PDF:', err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
+  const handleExportIncomeStatementPDF = async () => {
+    if (!incomeStatementData) return;
+    setIsExporting(true);
+    try {
+      await generateIncomeStatementReport(incomeStatementData, {
+        includeCharts: true,
+        chartRefs: {
+          revenueChart: revenueChartRef.current,
+          expenseChart: expenseChartRef.current,
+        },
+      });
+    } catch (err) {
+      console.error('Failed to export PDF:', err);
+    } finally {
+      setIsExporting(false);
+    }
+  };
 
   // Calculate metrics from real data
   const totalSpent = processingResult
@@ -92,8 +137,16 @@ function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: 
             </p>
           </div>
           <div className="flex space-x-3">
-            <button className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm">
-              Export Report
+            <button
+              onClick={handleExportIncomeStatementPDF}
+              disabled={isExporting}
+              className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+            >
+              {isExporting ? (
+                <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Exporting...</>
+              ) : (
+                <><Download className="w-4 h-4 mr-2" />Export Report</>
+              )}
             </button>
             <button
               onClick={() => setViewMode('transactions')}
@@ -106,7 +159,12 @@ function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: 
         </div>
 
         {/* Render the Income Statement Dashboard */}
-        <IncomeStatementDashboard data={incomeStatementData} highlightedElement={highlightedElement} />
+        <IncomeStatementDashboard
+          data={incomeStatementData}
+          highlightedElement={highlightedElement}
+          revenueChartRef={revenueChartRef}
+          expenseChartRef={expenseChartRef}
+        />
       </div>
     );
   }
@@ -174,8 +232,16 @@ function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: 
           <p className="text-slate-500 dark:text-slate-400 mt-1">Here's your spending breakdown from {dateRange?.start} to {dateRange?.end}.</p>
         </div>
         <div className="flex space-x-3">
-          <button className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm">
-            Export Report
+          <button
+            onClick={handleExportTransactionPDF}
+            disabled={isExporting}
+            className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 font-medium rounded-lg text-sm hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors shadow-sm disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+          >
+            {isExporting ? (
+              <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Exporting...</>
+            ) : (
+              <><Download className="w-4 h-4 mr-2" />Export Report</>
+            )}
           </button>
           <button
             onClick={() => {
@@ -237,6 +303,7 @@ function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: 
         {/* Spending by Category Pie Chart */}
         <div
           id="chart-pie"
+          ref={pieChartRef}
           className={`bg-gradient-to-br from-slate-50 to-indigo-50/30 dark:from-slate-800 dark:to-indigo-950/20 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'chart-pie' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}`}
         >
           <div className="flex items-center justify-between mb-6">
@@ -248,6 +315,7 @@ function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: 
         {/* Monthly Trends Chart */}
         <div
           id="chart-monthly-trends"
+          ref={barChartRef}
           className={`bg-gradient-to-br from-slate-50 to-purple-50/30 dark:from-slate-800 dark:to-purple-950/20 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'chart-monthly-trends' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}`}
         >
           <div className="flex items-center justify-between mb-6">
