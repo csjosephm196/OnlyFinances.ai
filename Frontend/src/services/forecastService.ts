@@ -27,9 +27,8 @@ import { CategorizedTransaction } from '../types/budget';
 import { IncomeStatementData } from '../types/incomeStatement';
 import { BalanceSheetData } from '../types/balanceSheet';
 
-// API base URL - defaults to localhost for development
-// @ts-ignore - Vite environment variable
-const API_BASE_URL: string = import.meta.env?.VITE_API_URL || 'http://localhost:8000';
+// API base URL - production backend
+const API_BASE_URL = 'https://demo-backend-bqyy.onrender.com';
 
 // ============================================
 // API Service Functions
@@ -87,20 +86,34 @@ export async function generateForecast(
         forecast_days: 90,
     };
 
-    const response = await fetch(`${API_BASE_URL}/v1/forecast`, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(request),
-    });
+    // Add timeout handling for slow backend cold-starts (Render free tier)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 60000); // 60s timeout
 
-    if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.detail?.message || `Forecast generation failed: ${response.status}`);
+    try {
+        const response = await fetch(`${API_BASE_URL}/v1/forecast`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(request),
+            signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.detail?.message || `Forecast generation failed: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        clearTimeout(timeoutId);
+        if (error instanceof Error && error.name === 'AbortError') {
+            throw new Error('Forecast request timed out. The server may be starting up - please try again in a moment.');
+        }
+        throw new Error(error instanceof Error ? error.message : 'Network error: Unable to reach forecast service');
     }
-
-    return response.json();
 }
 
 // ============================================
