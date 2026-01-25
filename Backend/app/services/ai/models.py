@@ -512,3 +512,87 @@ class IncomeStatementData(BaseModel):
     expenses: ExpensesSummary
     gross_profit: float   # Total Revenue - Cost of Goods Sold
     net_income: float     # Total Revenue - Total Expenses
+
+
+# ============================================================================
+# Recurring Expense Detection Models
+# ============================================================================
+
+class RecurringFrequency(str, Enum):
+    """Frequency patterns for recurring expenses."""
+    WEEKLY = "weekly"
+    BIWEEKLY = "biweekly"
+    MONTHLY = "monthly"
+    QUARTERLY = "quarterly"
+    YEARLY = "yearly"
+
+
+class RecurringExpense(BaseModel):
+    """A detected recurring expense (subscription, bill, etc.).
+    
+    Attributes:
+        merchant: Normalized merchant/vendor name
+        amount: Average charge amount
+        frequency: Detected billing frequency
+        category: Spending category
+        last_charge: Date of most recent charge
+        next_expected: Predicted date of next charge
+        occurrences: Number of times this charge was detected
+        confidence: Detection confidence score (0.0 to 1.0)
+    """
+    merchant: str
+    amount: float
+    frequency: RecurringFrequency
+    category: SpendingCategory
+    last_charge: date
+    next_expected: date
+    occurrences: int
+    confidence: float = Field(ge=0.0, le=1.0, default=0.8)
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "merchant": "Netflix",
+                "amount": 15.99,
+                "frequency": "monthly",
+                "category": "subscriptions",
+                "last_charge": "2026-01-15",
+                "next_expected": "2026-02-15",
+                "occurrences": 6,
+                "confidence": 0.95
+            }
+        }
+
+
+class RecurringExpensesResult(BaseModel):
+    """Response from recurring expense detection endpoint.
+    
+    Attributes:
+        success: Whether detection completed successfully
+        recurring_expenses: List of detected recurring expenses
+        monthly_total: Estimated total monthly recurring cost
+        total_detected: Number of recurring expenses found
+    """
+    success: bool = True
+    recurring_expenses: list[RecurringExpense]
+    monthly_total: float
+    total_detected: int
+
+    class Config:
+        json_schema_extra = {
+            "example": {
+                "success": True,
+                "recurring_expenses": [],
+                "monthly_total": 185.47,
+                "total_detected": 8
+            }
+        }
+
+
+class RecurringExpensesRequest(BaseModel):
+    """Request body for recurring expense detection.
+    
+    Attributes:
+        transactions: List of categorized transactions to analyze
+    """
+    transactions: list[CategorizedTransaction]
