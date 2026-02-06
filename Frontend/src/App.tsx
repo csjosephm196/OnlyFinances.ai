@@ -1,9 +1,17 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, Suspense } from 'react';
 import { Layout } from './components/Layout';
-import { Layer2Forecaster } from './components/Layer2Forecaster';
-import { Layer3Advisor } from './components/Layer3Advisor';
-import { AssetValuator } from './components/AssetValuator';
 import { FiscalCore } from './components/FiscalCore';
+
+// Lazy-load heavy panel components for code splitting
+const Layer2Forecaster = React.lazy(() =>
+  import('./components/Layer2Forecaster').then(m => ({ default: m.Layer2Forecaster }))
+);
+const Layer3Advisor = React.lazy(() =>
+  import('./components/Layer3Advisor').then(m => ({ default: m.Layer3Advisor }))
+);
+const AssetValuator = React.lazy(() =>
+  import('./components/AssetValuator').then(m => ({ default: m.AssetValuator }))
+);
 import { BudgetProvider, useBudget } from './context/BudgetContext';
 import { SpendingPieChart } from './components/charts/SpendingPieChart';
 import { MonthlyTrendChart } from './components/charts/MonthlyTrendChart';
@@ -96,10 +104,10 @@ function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: 
         {/* Empty State Card - Clickable to navigate to Fiscal Core */}
         <div
           onClick={() => onNavigate?.('fiscalcore')}
-          className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-indigo-100 dark:border-indigo-900 rounded-xl p-12 text-center cursor-pointer hover:shadow-lg hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-200 group"
+          className="bg-gradient-to-br from-emerald-50 to-amber-50 dark:from-emerald-950/30 dark:to-amber-950/30 border border-emerald-100 dark:border-emerald-900 rounded-xl p-12 text-center cursor-pointer hover:shadow-lg hover:border-emerald-200 dark:hover:border-emerald-800 transition-all duration-200 group"
         >
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white dark:bg-slate-800 rounded-full shadow-sm mb-6 group-hover:scale-105 transition-transform">
-            <Upload className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
+            <Upload className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
           </div>
           <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">No Data Yet</h2>
           <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto mb-6">
@@ -110,7 +118,7 @@ function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: 
             <span>→</span>
             <span className="flex items-center"><PieChart className="w-4 h-4 mr-1" /> View Insights</span>
           </div>
-          <p className="mt-4 text-sm text-indigo-600 dark:text-indigo-400 font-medium group-hover:underline">Click here to get started →</p>
+          <p className="mt-4 text-sm text-emerald-600 dark:text-emerald-400 font-medium group-hover:underline">Click here to get started →</p>
         </div>
 
         {/* Placeholder Cards */}
@@ -150,7 +158,7 @@ function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: 
             </button>
             <button
               onClick={() => setViewMode('transactions')}
-              className="px-4 py-2 bg-indigo-600 text-white font-medium rounded-lg text-sm hover:bg-indigo-700 transition-colors shadow-sm flex items-center"
+              className="px-4 py-2 bg-emerald-600 text-white font-medium rounded-lg text-sm hover:bg-emerald-700 transition-colors shadow-sm flex items-center"
             >
               <BarChart3 className="w-4 h-4 mr-2" />
               Analyze Transactions
@@ -182,7 +190,7 @@ function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: 
           <div className="flex space-x-3">
             <button
               onClick={() => setViewMode('incomeStatement')}
-              className="px-4 py-2 bg-purple-600 text-white font-medium rounded-lg text-sm hover:bg-purple-700 transition-colors shadow-sm flex items-center"
+              className="px-4 py-2 bg-amber-600 text-white font-medium rounded-lg text-sm hover:bg-amber-700 transition-colors shadow-sm flex items-center"
             >
               <TrendingUp className="w-4 h-4 mr-2" />
               Analyze Income Statement
@@ -193,16 +201,16 @@ function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: 
         {/* Empty State for Transactions */}
         <div
           onClick={() => onNavigate?.('fiscalcore')}
-          className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-indigo-100 dark:border-indigo-900 rounded-xl p-12 text-center cursor-pointer hover:shadow-lg hover:border-indigo-200 dark:hover:border-indigo-800 transition-all duration-200 group"
+          className="bg-gradient-to-br from-emerald-50 to-amber-50 dark:from-emerald-950/30 dark:to-amber-950/30 border border-emerald-100 dark:border-emerald-900 rounded-xl p-12 text-center cursor-pointer hover:shadow-lg hover:border-emerald-200 dark:hover:border-emerald-800 transition-all duration-200 group"
         >
           <div className="inline-flex items-center justify-center w-20 h-20 bg-white dark:bg-slate-800 rounded-full shadow-sm mb-6 group-hover:scale-105 transition-transform">
-            <Upload className="w-10 h-10 text-indigo-600 dark:text-indigo-400" />
+            <Upload className="w-10 h-10 text-emerald-600 dark:text-emerald-400" />
           </div>
           <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">No Transaction Data</h2>
           <p className="text-slate-600 dark:text-slate-400 max-w-md mx-auto mb-6">
             Upload your bank statements in Fiscal Core to see your transaction analysis and spending breakdown.
           </p>
-          <p className="mt-4 text-sm text-indigo-600 dark:text-indigo-400 font-medium group-hover:underline">Click here to upload transactions →</p>
+          <p className="mt-4 text-sm text-emerald-600 dark:text-emerald-400 font-medium group-hover:underline">Click here to upload transactions →</p>
         </div>
 
         {/* Placeholder Cards */}
@@ -252,7 +260,7 @@ function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: 
                 onNavigate?.('fiscalcore-incomestatement');
               }
             }}
-            className="px-4 py-2 bg-purple-600 text-white font-medium rounded-lg text-sm hover:bg-purple-700 transition-colors shadow-sm flex items-center"
+            className="px-4 py-2 bg-amber-600 text-white font-medium rounded-lg text-sm hover:bg-amber-700 transition-colors shadow-sm flex items-center"
           >
             <TrendingUp className="w-4 h-4 mr-2" />
             Analyze Income Statement
@@ -263,16 +271,16 @@ function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: 
 
       {/* Metric Cards with Real Data */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div id="metric-total-spending" className={`transition-all duration-300 ${highlightedElement === 'metric-total-spending' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900 rounded-xl' : ''}`}>
+        <div id="metric-total-spending" className={`transition-all duration-300 ${highlightedElement === 'metric-total-spending' ? 'ring-4 ring-emerald-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900 rounded-xl' : ''}`}>
           <MetricCard
             title="Total Spending"
             value={`$${totalSpent.toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
             subtitle="All categories combined"
             icon={Wallet}
-            color="indigo"
+            color="emerald"
           />
         </div>
-        <div id="metric-transactions" className={`transition-all duration-300 ${highlightedElement === 'metric-transactions' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900 rounded-xl' : ''}`}>
+        <div id="metric-transactions" className={`transition-all duration-300 ${highlightedElement === 'metric-transactions' ? 'ring-4 ring-emerald-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900 rounded-xl' : ''}`}>
           <MetricCard
             title="Transactions"
             value={transactionCount.toString()}
@@ -281,7 +289,7 @@ function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: 
             color="rose"
           />
         </div>
-        <div id="metric-top-category" className={`transition-all duration-300 ${highlightedElement === 'metric-top-category' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900 rounded-xl' : ''}`}>
+        <div id="metric-top-category" className={`transition-all duration-300 ${highlightedElement === 'metric-top-category' ? 'ring-4 ring-emerald-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900 rounded-xl' : ''}`}>
           <MetricCard
             title="Top Category"
             value={topCategory ? CATEGORY_DISPLAY[topCategory[0] as SpendingCategory]?.label || topCategory[0] : '-'}
@@ -304,7 +312,7 @@ function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: 
         <div
           id="chart-pie"
           ref={pieChartRef}
-          className={`bg-gradient-to-br from-slate-50 to-indigo-50/30 dark:from-slate-800 dark:to-indigo-950/20 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'chart-pie' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}`}
+          className={`bg-gradient-to-br from-slate-50 to-emerald-50/30 dark:from-slate-800 dark:to-emerald-950/20 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'chart-pie' ? 'ring-4 ring-emerald-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}`}
         >
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-semibold text-slate-900 dark:text-slate-100">Spending by Category</h3>
@@ -316,7 +324,7 @@ function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: 
         <div
           id="chart-monthly-trends"
           ref={barChartRef}
-          className={`bg-gradient-to-br from-slate-50 to-purple-50/30 dark:from-slate-800 dark:to-purple-950/20 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'chart-monthly-trends' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}`}
+          className={`bg-gradient-to-br from-slate-50 to-amber-50/30 dark:from-slate-800 dark:to-amber-950/20 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'chart-monthly-trends' ? 'ring-4 ring-emerald-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}`}
         >
           <div className="flex items-center justify-between mb-6">
             <h3 className="font-semibold text-slate-900 dark:text-slate-100">Monthly Spending Trends</h3>
@@ -328,7 +336,7 @@ function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: 
       {/* Top Spending Categories */}
       <div
         id="spending-breakdown"
-        className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'spending-breakdown' ? 'ring-4 ring-indigo-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}`}
+        className={`bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6 transition-all duration-300 ${highlightedElement === 'spending-breakdown' ? 'ring-4 ring-emerald-400 ring-offset-4 ring-offset-slate-50 dark:ring-offset-slate-900' : ''}`}
       >
         <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100 mb-6">Spending Breakdown</h3>
         <div className="space-y-5">
@@ -377,7 +385,7 @@ function DashboardOverview({ onNavigate, highlightedElement, initialViewMode }: 
 
 function IncomeStatementSummary({ data }: { data: { revenues: { total: number }; expenses: { total: number }; net_income: number; period: { start: string; end: string } } }) {
   return (
-    <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 border border-purple-200 dark:border-purple-800 rounded-xl p-6">
+    <div className="bg-gradient-to-br from-amber-50 to-emerald-50 dark:from-amber-950/30 dark:to-emerald-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-slate-900 dark:text-slate-100">Income Statement Summary</h3>
         <span className="text-xs text-slate-500 dark:text-slate-400">{data.period.start} to {data.period.end}</span>
@@ -397,10 +405,28 @@ function IncomeStatementSummary({ data }: { data: { revenues: { total: number };
         </div>
         <div className="bg-white/60 dark:bg-slate-800/60 rounded-lg p-4">
           <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Net Income</p>
-          <p className={`text-xl font-bold ${data.net_income >= 0 ? 'text-purple-600 dark:text-purple-400' : 'text-rose-600 dark:text-rose-400'}`}>
+          <p className={`text-xl font-bold ${data.net_income >= 0 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'}`}>
             {data.net_income >= 0 ? '+' : ''}${data.net_income.toLocaleString('en-US', { minimumFractionDigits: 2 })}
           </p>
         </div>
+      </div>
+    </div>
+  );
+}
+
+function PanelSkeleton() {
+  return (
+    <div className="space-y-6 animate-pulse">
+      <div className="h-8 w-48 bg-slate-200 dark:bg-slate-700 rounded-lg" />
+      <div className="h-4 w-80 bg-slate-100 dark:bg-slate-800 rounded" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {[1, 2, 3].map(i => (
+          <div key={i} className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700">
+            <div className="h-10 w-10 bg-slate-100 dark:bg-slate-700 rounded-lg mb-4" />
+            <div className="h-4 w-24 bg-slate-100 dark:bg-slate-700 rounded mb-2" />
+            <div className="h-6 w-20 bg-slate-200 dark:bg-slate-600 rounded" />
+          </div>
+        ))}
       </div>
     </div>
   );
@@ -424,10 +450,10 @@ function PlaceholderCard({ title, icon: Icon }: { title: string; icon: React.Ele
 
 function MetricCard({ title, value, subtitle, icon: Icon, color }: { title: string; value: string; subtitle?: string; icon: React.ElementType; color: string }) {
   const colorClasses: Record<string, string> = {
-    indigo: "bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400",
+    emerald: "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400",
     rose: "bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400",
     amber: "bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400",
-    emerald: "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400",
+    teal: "bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400",
   };
 
   return (
@@ -488,9 +514,9 @@ function AppContent() {
     switch (activeLayer) {
       case 'dashboard': return <DashboardOverview onNavigate={handleSetActiveLayer} highlightedElement={highlightedElement} initialViewMode={dashboardInitialView} />;
       case 'fiscalcore': return <FiscalCore onNavigate={handleSetActiveLayer} defaultTab={fiscalCoreDefaultTab} />;
-      case 'layer2': return <Layer2Forecaster />;
-      case 'layer3': return <Layer3Advisor />;
-      case 'assets': return <AssetValuator />;
+      case 'layer2': return <Suspense fallback={<PanelSkeleton />}><Layer2Forecaster /></Suspense>;
+      case 'layer3': return <Suspense fallback={<PanelSkeleton />}><Layer3Advisor /></Suspense>;
+      case 'assets': return <Suspense fallback={<PanelSkeleton />}><AssetValuator /></Suspense>;
       default: return <DashboardOverview highlightedElement={highlightedElement} />;
     }
   };
@@ -510,7 +536,7 @@ export default function App() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-900">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-indigo-600 dark:border-indigo-400 border-t-transparent rounded-full animate-spin" />
+          <div className="w-12 h-12 border-4 border-emerald-600 dark:border-emerald-400 border-t-transparent rounded-full animate-spin" />
           <p className="text-slate-500 dark:text-slate-400 font-medium">Loading...</p>
         </div>
       </div>

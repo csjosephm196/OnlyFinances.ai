@@ -84,7 +84,7 @@ export function IncomeStatementDashboard({
                     value={`$${Math.abs(data.net_income).toLocaleString('en-US', { minimumFractionDigits: 2 })}`}
                     subtitle={`${profitMargin}% profit margin`}
                     icon={DollarSign}
-                    color="purple"
+                    color="amber"
                     isPositive={data.net_income >= 0}
                     highlight
                 />
@@ -172,9 +172,9 @@ export function IncomeStatementDashboard({
             </div>
 
             {/* Financial Summary */}
-            <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 border border-purple-200 dark:border-purple-800 rounded-xl p-6">
+            <div className="bg-gradient-to-br from-amber-50 to-emerald-50 dark:from-amber-950/30 dark:to-emerald-950/30 border border-amber-200 dark:border-amber-800 rounded-xl p-6">
                 <h3 className="font-semibold text-slate-900 dark:text-slate-100 mb-4 flex items-center">
-                    <Percent className="w-5 h-5 mr-2 text-purple-600 dark:text-purple-400" />
+                    <Percent className="w-5 h-5 mr-2 text-amber-600 dark:text-amber-400" />
                     Financial Performance Summary
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -187,7 +187,7 @@ export function IncomeStatementDashboard({
                     </div>
                     <div className="bg-white/60 dark:bg-slate-800/60 rounded-lg p-4">
                         <p className="text-sm text-slate-500 dark:text-slate-400 mb-1">Net Profit Margin</p>
-                        <p className={`text-2xl font-bold ${parseFloat(profitMargin) >= 0 ? 'text-purple-600 dark:text-purple-400' : 'text-rose-600 dark:text-rose-400'}`}>
+                        <p className={`text-2xl font-bold ${parseFloat(profitMargin) >= 0 ? 'text-amber-600 dark:text-amber-400' : 'text-rose-600 dark:text-rose-400'}`}>
                             {profitMargin}%
                         </p>
                         <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">After all expenses</p>
@@ -227,19 +227,19 @@ function MetricCard({
         emerald: "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400",
         rose: "bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400",
         amber: "bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400",
-        purple: "bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400",
+        teal: "bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400",
     };
 
     const valueColorClasses: Record<string, string> = {
         emerald: "text-emerald-600 dark:text-emerald-400",
         rose: "text-rose-600 dark:text-rose-400",
         amber: isPositive ? "text-amber-600 dark:text-amber-400" : "text-rose-600 dark:text-rose-400",
-        purple: isPositive ? "text-purple-600 dark:text-purple-400" : "text-rose-600 dark:text-rose-400",
+        teal: isPositive ? "text-teal-600 dark:text-teal-400" : "text-rose-600 dark:text-rose-400",
     };
 
     return (
         <div className={`p-6 rounded-xl border shadow-sm hover:shadow-md transition-shadow ${highlight
-            ? 'bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 border-purple-200 dark:border-purple-800'
+            ? 'bg-gradient-to-br from-amber-50 to-emerald-50 dark:from-amber-950/30 dark:to-emerald-950/30 border-amber-200 dark:border-amber-800'
             : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'
             }`}>
             <div className="flex items-start justify-between mb-4">

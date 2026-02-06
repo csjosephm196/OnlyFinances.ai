@@ -241,7 +241,7 @@ export function BalanceSheetUploader({ onNavigate }: { onNavigate?: (page: strin
                             title="Owner's Equity"
                             value={balanceSheetData.equity}
                             icon={Layers}
-                            color="indigo"
+                            color="teal"
                         />
                     </div>
 
@@ -328,7 +328,7 @@ function SummaryCard({ title, value, icon: Icon, color }: { title: string; value
     const styles: Record<string, string> = {
         emerald: "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400",
         rose: "bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400",
-        indigo: "bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400",
+        teal: "bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400",
     };
 
     return (

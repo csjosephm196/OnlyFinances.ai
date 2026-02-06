@@ -449,7 +449,7 @@ export function Layer2Forecaster() {
             <button
               onClick={handleGenerateForecast}
               disabled={isGenerating}
-              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 rounded-lg hover:bg-indigo-100 dark:hover:bg-indigo-900/40 transition-colors disabled:opacity-50"
+              className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-900/40 transition-colors disabled:opacity-50"
             >
               {isGenerating ? (
                 <Loader2 className="w-4 h-4 animate-spin" />
@@ -491,7 +491,7 @@ export function Layer2Forecaster() {
         {isLoading || isGenerating ? (
           <div className="h-[400px] flex items-center justify-center">
             <div className="text-center">
-              <Loader2 className="w-8 h-8 animate-spin text-indigo-600 mx-auto mb-2" />
+              <Loader2 className="w-8 h-8 animate-spin text-emerald-600 mx-auto mb-2" />
               <p className="text-sm text-slate-500">{isGenerating ? 'Generating forecast...' : 'Loading...'}</p>
             </div>
           </div>
@@ -507,8 +507,8 @@ export function Layer2Forecaster() {
                     <stop offset="95%" stopColor="#818cf8" stopOpacity={0} />
                   </linearGradient>
                   <linearGradient id="colorHistorical" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#6366f1" stopOpacity={0.5} />
-                    <stop offset="95%" stopColor="#6366f1" stopOpacity={0} />
+                    <stop offset="5%" stopColor="#059669" stopOpacity={0.5} />
+                    <stop offset="95%" stopColor="#059669" stopOpacity={0} />
                   </linearGradient>
                 </defs>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
@@ -600,7 +600,7 @@ export function Layer2Forecaster() {
               {/* Actual Balance */}
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-0.5 bg-indigo-600 rounded"></div>
+                  <div className="w-6 h-0.5 bg-emerald-600 rounded"></div>
                   <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Actual Balance</span>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -624,7 +624,7 @@ export function Layer2Forecaster() {
               {/* Projected Balance */}
               <div className="space-y-1">
                 <div className="flex items-center gap-2">
-                  <div className="w-6 h-0.5 bg-indigo-400 rounded"></div>
+                  <div className="w-6 h-0.5 bg-emerald-400 rounded"></div>
                   <span className="text-sm font-medium text-slate-700 dark:text-slate-300">Projected Balance</span>
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
@@ -661,7 +661,7 @@ export function Layer2Forecaster() {
         <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center space-x-2">
-              <CalendarIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <CalendarIcon className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
               <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Financial Calendar</h3>
             </div>
             {dateRange && (
@@ -685,7 +685,7 @@ export function Layer2Forecaster() {
                 modifiersClassNames={{
                   hasExpenses: "!bg-rose-100 dark:!bg-rose-900/30 !text-rose-900 dark:!text-rose-100 font-medium",
                   hasRevenues: "!bg-emerald-100 dark:!bg-emerald-900/30 !text-emerald-900 dark:!text-emerald-100 font-medium",
-                  hasBoth: "!bg-indigo-100 dark:!bg-indigo-900/30 !text-indigo-900 dark:!text-indigo-100 font-semibold ring-2 ring-indigo-400 dark:ring-indigo-600",
+                  hasBoth: "!bg-emerald-100 dark:!bg-emerald-900/30 !text-emerald-900 dark:!text-emerald-100 font-semibold ring-2 ring-emerald-400 dark:ring-emerald-600",
                   projected: "border-2 border-dashed",
                   projectedPositive: "border-emerald-400 dark:border-emerald-500 bg-emerald-50/50 dark:bg-emerald-950/10",
                   projectedNegative: "border-rose-400 dark:border-rose-500 bg-rose-50/50 dark:bg-rose-950/10",
@@ -699,7 +699,7 @@ export function Layer2Forecaster() {
                   row: "flex w-full justify-between mb-1",
                   cell: "w-12 h-12 flex items-center justify-center p-0",
                   day: "w-10 h-10 rounded-md text-sm font-medium hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors",
-                  day_selected: "!bg-indigo-600 !text-white hover:!bg-indigo-700",
+                  day_selected: "!bg-emerald-600 !text-white hover:!bg-emerald-700",
                   day_today: "bg-slate-200 dark:bg-slate-700 font-semibold",
                 }}
                 disabled={(date: Date) => {
@@ -723,7 +723,7 @@ export function Layer2Forecaster() {
                   <span className="text-slate-600 dark:text-slate-400">Revenues Only</span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <div className="w-4 h-4 rounded bg-indigo-100 dark:bg-indigo-900/30 border-2 border-indigo-400 dark:border-indigo-600"></div>
+                  <div className="w-4 h-4 rounded bg-emerald-100 dark:bg-emerald-900/30 border-2 border-emerald-400 dark:border-emerald-600"></div>
                   <span className="text-slate-600 dark:text-slate-400">Both</span>
                 </div>
                 <div className="flex items-center space-x-2">
@@ -790,7 +790,7 @@ export function Layer2Forecaster() {
                           {selectedDateDetails.transactions.map((t, idx) => (
                             <div
                               key={idx}
-                              className="p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-600 hover:shadow-sm transition-all"
+                              className="p-3 rounded-lg bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-600 hover:shadow-sm transition-all"
                             >
                               <div className="space-y-2">
                                 <div>
@@ -820,19 +820,19 @@ export function Layer2Forecaster() {
                       <div className="space-y-3">
                         {/* Projected Balance Card */}
                         {'projectedBalance' in selectedDateDetails && selectedDateDetails.projectedBalance !== undefined && (
-                          <div className="p-3 rounded-lg bg-indigo-50 dark:bg-indigo-950/20 border border-indigo-200 dark:border-indigo-800">
+                          <div className="p-3 rounded-lg bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-200 dark:border-emerald-800">
                             <div className="flex items-center justify-between mb-2">
-                              <span className="text-sm font-medium text-indigo-700 dark:text-indigo-300 flex items-center">
-                                <DollarSign className="w-4 h-4 mr-2 text-indigo-600 dark:text-indigo-400" />
+                              <span className="text-sm font-medium text-emerald-700 dark:text-emerald-300 flex items-center">
+                                <DollarSign className="w-4 h-4 mr-2 text-emerald-600 dark:text-emerald-400" />
                                 Projected Balance
                               </span>
-                              <span className="text-lg font-bold text-indigo-600 dark:text-indigo-400">
+                              <span className="text-lg font-bold text-emerald-600 dark:text-emerald-400">
                                 ${selectedDateDetails.projectedBalance.toLocaleString('en-US', { minimumFractionDigits: 2 })}
                               </span>
                             </div>
                             {/* Confidence Range */}
                             {'upperBound' in selectedDateDetails && selectedDateDetails.upperBound !== null && 'lowerBound' in selectedDateDetails && selectedDateDetails.lowerBound !== null && (
-                              <div className="text-xs text-indigo-600/70 dark:text-indigo-400/70 border-t border-indigo-200/50 dark:border-indigo-700/50 pt-2 mt-2">
+                              <div className="text-xs text-emerald-600/70 dark:text-emerald-400/70 border-t border-emerald-200/50 dark:border-emerald-700/50 pt-2 mt-2">
                                 <div className="flex justify-between">
                                   <span>Confidence Range:</span>
                                   <span className="font-medium">
@@ -935,13 +935,13 @@ function InsightCard({ type, icon: Icon, title, desc, metricValue }: InsightCard
   const styles = {
     warning: "bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 text-amber-900 dark:text-amber-100",
     success: "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100",
-    info: "bg-indigo-50/50 dark:bg-indigo-950/20 border-indigo-200 dark:border-indigo-800 text-indigo-900 dark:text-indigo-100",
+    info: "bg-emerald-50/50 dark:bg-emerald-950/20 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-100",
   }[type] || "bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700";
 
   const iconColors = {
     warning: "text-amber-600 dark:text-amber-400",
     success: "text-emerald-600 dark:text-emerald-400",
-    info: "text-indigo-600 dark:text-indigo-400",
+    info: "text-emerald-600 dark:text-emerald-400",
   }[type] || "text-slate-600 dark:text-slate-400";
 
   return (

@@ -14,7 +14,7 @@ export function AssetValuator() {
     color: getAssetColor(item.category),
   })) || [
       { name: 'Cash', value: 53000, color: '#10b981' },
-      { name: 'Receivables', value: 12500, color: '#6366f1' },
+      { name: 'Receivables', value: 12500, color: '#059669' },
       { name: 'Hardware', value: 8400, color: '#f59e0b' },
     ];
 
@@ -55,7 +55,7 @@ export function AssetValuator() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatCard title="Total Assets" value={totalAssets} icon={DollarSign} color="emerald" />
         <StatCard title="Total Liabilities" value={totalLiabilities} icon={CreditCard} color="rose" />
-        <StatCard title="Owner's Equity" value={equity} icon={Layers} color="indigo" />
+        <StatCard title="Owner's Equity" value={equity} icon={Layers} color="teal" />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -106,7 +106,7 @@ export function AssetValuator() {
                 <motion.div
                   initial={{ width: 0 }}
                   animate={{ width: `${(equity / totalAssets) * 100}%` }}
-                  className="h-full bg-indigo-500 flex items-center justify-center text-white font-medium text-sm"
+                  className="h-full bg-emerald-500 flex items-center justify-center text-white font-medium text-sm"
                 >
                   <span className="drop-shadow-sm">Equity</span>
                 </motion.div>
@@ -170,13 +170,13 @@ export function AssetValuator() {
 function getAssetColor(category: string): string {
   const colors: Record<string, string> = {
     cash: '#10b981',
-    accounts_receivable: '#6366f1',
-    inventory: '#8b5cf6',
-    prepaid_expenses: '#ec4899',
+    accounts_receivable: '#059669',
+    inventory: '#0d9488',
+    prepaid_expenses: '#14b8a6',
     equipment: '#f59e0b',
     property: '#14b8a6',
     investments: '#06b6d4',
-    intangible_assets: '#a855f7',
+    intangible_assets: '#14b8a6',
     other_assets: '#64748b',
   };
   return colors[category] || '#64748b';
@@ -187,10 +187,10 @@ function getLiabilityColor(category: string): string {
     accounts_payable: '#f43f5e',
     credit_cards: '#dc2626',
     short_term_debt: '#ea580c',
-    accrued_expenses: '#d946ef',
+    accrued_expenses: '#d97706',
     taxes_payable: '#e11d48',
     long_term_debt: '#be123c',
-    deferred_revenue: '#c026d3',
+    deferred_revenue: '#b45309',
     other_liabilities: '#64748b',
   };
   return colors[category] || '#64748b';
@@ -200,8 +200,8 @@ function StatCard({ title, value, icon: Icon, color }: any) {
   const styles = {
     emerald: "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400",
     rose: "bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400",
-    indigo: "bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400",
-  }[color as string] || "bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400";
+    teal: "bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400",
+  }[color as string]
 
   return (
     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm p-6 rounded-xl hover:shadow-md transition-shadow">

@@ -15,18 +15,18 @@ export const CATEGORY_DISPLAY: Record<SpendingCategory, CategoryDisplay> = {
     marketing: { icon: '📣', label: 'Marketing', color: '#EA580C' },
     equipment: { icon: '🔧', label: 'Equipment', color: '#0891B2' },
     assets: { icon: '💻', label: 'Assets', color: '#0E7490' },
-    office_supplies: { icon: '📎', label: 'Office Supplies', color: '#6366F1' },
-    software: { icon: '💿', label: 'Software', color: '#8B5CF6' },
-    subscriptions: { icon: '🔄', label: 'Subscriptions', color: '#A855F7' },
+    office_supplies: { icon: '📎', label: 'Office Supplies', color: '#0d9488' },
+    software: { icon: '💿', label: 'Software', color: '#0891b2' },
+    subscriptions: { icon: '🔄', label: 'Subscriptions', color: '#06b6d4' },
     inventory: { icon: '📦', label: 'Inventory', color: '#14B8A6' },
     shipping: { icon: '📬', label: 'Shipping', color: '#2DD4BF' },
     maintenance: { icon: '🔨', label: 'Maintenance', color: '#64748B' },
 
     // === FACILITY & OVERHEAD ===
-    rent: { icon: '🏢', label: 'Rent/Lease', color: '#8B5CF6' },
-    housing: { icon: '🏠', label: 'Housing', color: '#7C3AED' },
-    utilities: { icon: '💡', label: 'Utilities', color: '#6366F1' },
-    insurance: { icon: '🛡️', label: 'Insurance', color: '#3B82F6' },
+    rent: { icon: '🏢', label: 'Rent/Lease', color: '#b45309' },
+    housing: { icon: '🏠', label: 'Housing', color: '#d97706' },
+    utilities: { icon: '💡', label: 'Utilities', color: '#ca8a04' },
+    insurance: { icon: '🛡️', label: 'Insurance', color: '#0d9488' },
 
     // === PEOPLE & SERVICES ===
     payroll: { icon: '💵', label: 'Payroll', color: '#059669' },
@@ -50,16 +50,16 @@ export const CATEGORY_DISPLAY: Record<SpendingCategory, CategoryDisplay> = {
 
     // === TRAVEL & MEALS ===
     travel: { icon: '✈️', label: 'Travel', color: '#0EA5E9' },
-    transportation: { icon: '🚗', label: 'Transportation', color: '#3B82F6' },
+    transportation: { icon: '🚗', label: 'Transportation', color: '#0891b2' },
     dining_out: { icon: '🍽️', label: 'Meals & Entertainment', color: '#F59E0B' },
 
     // === OTHER ===
     groceries: { icon: '🛒', label: 'Groceries', color: '#10B981' },
     shopping: { icon: '🛍️', label: 'Shopping', color: '#14B8A6' },
     healthcare: { icon: '💊', label: 'Healthcare', color: '#EF4444' },
-    education: { icon: '📚', label: 'Education', color: '#8B5CF6' },
-    entertainment: { icon: '🎬', label: 'Entertainment', color: '#EC4899' },
-    personal: { icon: '🎁', label: 'Personal', color: '#D946EF' },
+    education: { icon: '📚', label: 'Education', color: '#0f766e' },
+    entertainment: { icon: '🎬', label: 'Entertainment', color: '#d97706' },
+    personal: { icon: '🎁', label: 'Personal', color: '#9a3412' },
     other: { icon: '❓', label: 'Other', color: '#9CA3AF' },
 };
 
@@ -67,11 +67,11 @@ export const CATEGORY_DISPLAY: Record<SpendingCategory, CategoryDisplay> = {
 export const REVENUE_DISPLAY: Record<RevenueCategory, { icon: string; label: string; color: string }> = {
     wages_salary: { icon: '💵', label: 'Wages & Salary', color: '#22C55E' },
     sales: { icon: '🛒', label: 'Sales', color: '#10B981' },
-    services: { icon: '🔧', label: 'Services', color: '#3B82F6' },
-    interest_income: { icon: '🏦', label: 'Interest Income', color: '#8B5CF6' },
+    services: { icon: '🔧', label: 'Services', color: '#0d9488' },
+    interest_income: { icon: '🏦', label: 'Interest Income', color: '#0891b2' },
     investment_income: { icon: '📈', label: 'Investment Income', color: '#06B6D4' },
     rental_income: { icon: '🏠', label: 'Rental Income', color: '#F59E0B' },
-    royalties: { icon: '👑', label: 'Royalties', color: '#EC4899' },
+    royalties: { icon: '👑', label: 'Royalties', color: '#b45309' },
     other_revenue: { icon: '💰', label: 'Other Revenue', color: '#6B7280' },
 };
 
@@ -82,12 +82,12 @@ export const EXPENSE_DISPLAY: Record<ExpenseCategory, { icon: string; label: str
     rent: { icon: '🏢', label: 'Rent', color: '#F59E0B' },
     utilities: { icon: '💡', label: 'Utilities', color: '#84CC16' },
     marketing: { icon: '📢', label: 'Marketing', color: '#06B6D4' },
-    insurance: { icon: '🛡️', label: 'Insurance', color: '#3B82F6' },
-    depreciation: { icon: '📉', label: 'Depreciation', color: '#8B5CF6' },
-    interest_expense: { icon: '💳', label: 'Interest Expense', color: '#EC4899' },
-    taxes: { icon: '🏛️', label: 'Taxes', color: '#6366F1' },
+    insurance: { icon: '🛡️', label: 'Insurance', color: '#0d9488' },
+    depreciation: { icon: '📉', label: 'Depreciation', color: '#78716c' },
+    interest_expense: { icon: '💳', label: 'Interest Expense', color: '#9a3412' },
+    taxes: { icon: '🏛️', label: 'Taxes', color: '#dc2626' },
     professional_fees: { icon: '👔', label: 'Professional Fees', color: '#14B8A6' },
-    office_supplies: { icon: '📎', label: 'Office Supplies', color: '#A855F7' },
+    office_supplies: { icon: '📎', label: 'Office Supplies', color: '#0891b2' },
     travel: { icon: '✈️', label: 'Travel', color: '#F43F5E' },
     other_expenses: { icon: '📋', label: 'Other Expenses', color: '#6B7280' },
 };

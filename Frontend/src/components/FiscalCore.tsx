@@ -96,7 +96,7 @@ export function FiscalCore({ onNavigate, defaultTab }: FiscalCoreProps = {}) {
                     <UploadHistoryDropdown onSelect={handleHistorySelect} />
 
                     {/* Tab Buttons */}
-                    <div className="flex items-center space-x-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+                    <div className="flex items-center space-x-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg overflow-x-auto">
                         {TABS.map((tab) => {
                             const Icon = tab.icon;
                             const isActive = activeTab === tab.id;
@@ -108,12 +108,12 @@ export function FiscalCore({ onNavigate, defaultTab }: FiscalCoreProps = {}) {
                                     className={`
                   flex items-center px-3 py-2 rounded-md text-sm font-medium transition-all duration-200
                   ${isActive
-                                            ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm'
+                                            ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm'
                                             : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/50'
                                         }
                 `}
                                 >
-                                    <Icon className={`w-4 h-4 mr-1.5 ${isActive ? 'text-indigo-600 dark:text-indigo-400' : ''}`} />
+                                    <Icon className={`w-4 h-4 mr-1.5 ${isActive ? 'text-emerald-600 dark:text-emerald-400' : ''}`} />
                                     <span className="hidden md:inline">{tab.label}</span>
                                 </button>
                             );

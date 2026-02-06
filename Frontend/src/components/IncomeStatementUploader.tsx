@@ -64,7 +64,7 @@ export function IncomeStatementUploader({ onNavigate }: { onNavigate?: (layer: s
                     particleCount: 150,
                     spread: 70,
                     origin: { y: 0.6 },
-                    colors: ['#9333ea', '#a855f7', '#4f46e5']
+                    colors: ['#9333ea', '#14b8a6', '#4f46e5']
                 });
             }
         } catch (err) {
@@ -117,22 +117,22 @@ export function IncomeStatementUploader({ onNavigate }: { onNavigate?: (layer: s
                     className={`
             relative border-2 border-dashed rounded-xl p-16 text-center transition-all cursor-pointer group
             ${isDragOver
-                            ? 'border-purple-500 bg-purple-50/50 dark:bg-purple-950/30'
+                            ? 'border-amber-500 bg-amber-50/50 dark:bg-amber-950/30'
                             : 'border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-700/50'}
           `}
                 >
                     {processing ? (
                         <div className="flex flex-col items-center">
                             <div className="w-16 h-16 relative">
-                                <div className="absolute inset-0 border-4 border-purple-100 dark:border-purple-900 rounded-full"></div>
-                                <div className="absolute inset-0 border-4 border-purple-600 dark:border-purple-400 border-t-transparent rounded-full animate-spin"></div>
+                                <div className="absolute inset-0 border-4 border-amber-100 dark:border-amber-900 rounded-full"></div>
+                                <div className="absolute inset-0 border-4 border-amber-600 dark:border-amber-400 border-t-transparent rounded-full animate-spin"></div>
                             </div>
                             <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mt-6">Analyzing Income Statement...</h3>
                             <p className="text-slate-500 dark:text-slate-400 text-sm mt-2">AI is categorizing your revenue and expenses. This may take a moment.</p>
                         </div>
                     ) : (
                         <div className="flex flex-col items-center">
-                            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 transition-colors ${isDragOver ? 'bg-purple-100 dark:bg-purple-900/50 text-purple-600 dark:text-purple-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 group-hover:bg-purple-50 dark:group-hover:bg-purple-900/30 group-hover:text-purple-600 dark:group-hover:text-purple-400'}`}>
+                            <div className={`w-16 h-16 rounded-full flex items-center justify-center mb-6 transition-colors ${isDragOver ? 'bg-amber-100 dark:bg-amber-900/50 text-amber-600 dark:text-amber-400' : 'bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 group-hover:bg-amber-50 dark:group-hover:bg-amber-900/30 group-hover:text-amber-600 dark:group-hover:text-amber-400'}`}>
                                 <TrendingUp className="w-8 h-8" />
                             </div>
                             <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100">Click to upload or drag and drop</h3>
@@ -186,14 +186,14 @@ export function IncomeStatementUploader({ onNavigate }: { onNavigate?: (layer: s
                     <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="mt-4 p-4 bg-purple-50 dark:bg-purple-950/30 border border-purple-200 dark:border-purple-800 rounded-lg flex items-start space-x-3"
+                        className="mt-4 p-4 bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg flex items-start space-x-3"
                     >
-                        <CheckCircle2 className="w-5 h-5 text-purple-500 dark:text-purple-400 flex-shrink-0 mt-0.5" />
+                        <CheckCircle2 className="w-5 h-5 text-amber-500 dark:text-amber-400 flex-shrink-0 mt-0.5" />
                         <div>
-                            <p className="font-medium text-purple-700 dark:text-purple-300">
+                            <p className="font-medium text-amber-700 dark:text-amber-300">
                                 Successfully merged income statement
                             </p>
-                            <p className="text-sm text-purple-600 dark:text-purple-400 mt-1">
+                            <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
                                 Added {mergeNotification.newCount} new item{mergeNotification.newCount !== 1 ? 's' : ''}
                                 {mergeNotification.updatedCount ? `, updated ${mergeNotification.updatedCount} existing item${mergeNotification.updatedCount !== 1 ? 's' : ''}` : ''}
                             </p>
@@ -247,16 +247,16 @@ export function IncomeStatementUploader({ onNavigate }: { onNavigate?: (layer: s
                             title="Net Income"
                             value={incomeStatementData.net_income}
                             icon={DollarSign}
-                            color="purple"
+                            color="amber"
                             highlight
                         />
                     </div>
 
                     {/* Items Table */}
                     <div className="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm rounded-xl overflow-hidden">
-                        <div className="px-6 py-4 border-b-2 border-purple-100 dark:border-purple-900/50 flex justify-between items-center bg-gradient-to-r from-slate-50 to-purple-50/30 dark:from-slate-900 dark:to-purple-950/30">
+                        <div className="px-6 py-4 border-b-2 border-amber-100 dark:border-amber-900/50 flex justify-between items-center bg-gradient-to-r from-slate-50 to-amber-50/30 dark:from-slate-900 dark:to-amber-950/30">
                             <div className="flex items-center space-x-2">
-                                <div className="bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-400 p-1 rounded-full">
+                                <div className="bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-400 p-1 rounded-full">
                                     <CheckCircle2 className="w-4 h-4" />
                                 </div>
                                 <h3 className="text-base font-bold text-slate-900 dark:text-slate-100">
@@ -267,7 +267,7 @@ export function IncomeStatementUploader({ onNavigate }: { onNavigate?: (layer: s
                                 </span>
                             </div>
                             <div className="flex items-center space-x-2 text-xs font-medium bg-slate-100 dark:bg-slate-800 px-2.5 py-1 rounded-full border border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300">
-                                <span className="w-2 h-2 bg-purple-500 dark:bg-purple-400 rounded-full" />
+                                <span className="w-2 h-2 bg-amber-500 dark:bg-amber-400 rounded-full" />
                                 <span>{avgConfidence}% Avg Confidence</span>
                             </div>
                         </div>
@@ -319,7 +319,7 @@ export function IncomeStatementUploader({ onNavigate }: { onNavigate?: (layer: s
                             </p>
                             <button
                                 onClick={() => onNavigate?.('dashboard-incomestatement')}
-                                className="flex items-center px-4 py-2 bg-purple-600 text-white text-sm font-medium rounded-lg hover:bg-purple-700 transition-colors shadow-sm shadow-purple-200"
+                                className="flex items-center px-4 py-2 bg-amber-600 text-white text-sm font-medium rounded-lg hover:bg-amber-700 transition-colors shadow-sm shadow-amber-200"
                             >
                                 View Dashboard <ArrowRight className="w-4 h-4 ml-2" />
                             </button>
@@ -336,11 +336,11 @@ function SummaryCard({ title, value, icon: Icon, color, highlight }: { title: st
         emerald: "bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400",
         rose: "bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400",
         amber: "bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400",
-        purple: "bg-purple-50 dark:bg-purple-950/50 text-purple-600 dark:text-purple-400",
+        teal: "bg-teal-50 dark:bg-teal-950/50 text-teal-600 dark:text-teal-400",
     };
 
     return (
-        <div className={`border shadow-sm p-6 rounded-xl hover:shadow-md transition-shadow ${highlight ? 'bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 border-purple-200 dark:border-purple-800' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
+        <div className={`border shadow-sm p-6 rounded-xl hover:shadow-md transition-shadow ${highlight ? 'bg-gradient-to-br from-amber-50 to-emerald-50 dark:from-amber-950/30 dark:to-emerald-950/30 border-amber-200 dark:border-amber-800' : 'bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700'}`}>
             <div className="flex items-start justify-between mb-4">
                 <div className={`p-3 rounded-lg ${styles[color] || "bg-slate-50 dark:bg-slate-900 text-slate-600 dark:text-slate-400"}`}>
                     <Icon className="w-6 h-6" />

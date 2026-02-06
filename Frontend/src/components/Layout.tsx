@@ -14,6 +14,7 @@ interface LayoutProps {
 
 export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
   const { signOut, user } = useAuth();
   const { searchQuery, setSearchQuery, searchResults, isSearchOpen, setIsSearchOpen } = useSearch();
@@ -128,11 +129,27 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
 
   return (
     <div className="flex h-screen bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 font-sans">
+      {/* Skip-nav link */}
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-emerald-600 focus:text-white focus:rounded-lg focus:shadow-lg focus:outline-none"
+      >
+        Skip to main content
+      </a>
+
+      {/* Mobile sidebar backdrop */}
+      {mobileMenuOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        />
+      )}
+
       {/* Sidebar */}
       <motion.div
         initial={{ width: 260 }}
-        animate={{ width: sidebarOpen ? 260 : 72 }}
-        className="flex flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm z-10"
+        animate={{ width: mobileMenuOpen ? 260 : (sidebarOpen ? 260 : 72) }}
+        className={`flex flex-col border-r border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-sm ${mobileMenuOpen ? 'fixed inset-y-0 left-0 z-40 shadow-2xl' : 'hidden'} md:relative md:flex md:z-10`}
       >
         <div className={`p-5 flex items-center ${sidebarOpen ? 'justify-between' : 'justify-center'}`}>
           <div className={`flex items-center ${sidebarOpen ? 'space-x-3 flex-1' : ''}`}>
@@ -140,7 +157,7 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
               onClick={() => setSidebarOpen(!sidebarOpen)}
               className="flex-shrink-0 group"
             >
-              <div className="w-12 h-12 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-500 dark:via-purple-500 dark:to-pink-500 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-500/30 flex-shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-indigo-500/50 group-hover:ring-2 group-hover:ring-indigo-400 dark:group-hover:ring-indigo-500 group-hover:ring-offset-2 group-hover:ring-offset-white dark:group-hover:ring-offset-slate-800 relative cursor-pointer animate-gradient bg-[length:200%_200%]">
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 dark:from-emerald-500 dark:via-teal-500 dark:to-cyan-600 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30 flex-shrink-0 transition-all duration-200 group-hover:scale-110 group-hover:shadow-xl group-hover:shadow-emerald-500/50 group-hover:ring-2 group-hover:ring-emerald-400 dark:group-hover:ring-emerald-500 group-hover:ring-offset-2 group-hover:ring-offset-white dark:group-hover:ring-offset-slate-800 relative cursor-pointer animate-gradient bg-[length:200%_200%]">
                 <Sparkles className="w-6 h-6 text-white transition-transform duration-200 group-hover:rotate-12" />
 
                 {/* Visual indicator at bottom */}
@@ -151,8 +168,8 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
             </button>
             {sidebarOpen && (
               <button
-                onClick={() => setActiveLayer('dashboard')}
-                className="font-bold text-xl tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap hover:text-indigo-600 dark:hover:text-indigo-400 transition-colors"
+              onClick={() => { setActiveLayer('dashboard'); setMobileMenuOpen(false); }}
+                className="font-bold text-xl tracking-tight text-slate-900 dark:text-slate-100 whitespace-nowrap hover:text-emerald-600 dark:hover:text-emerald-400 transition-colors"
               >
                 OnlyFinances.ai
               </button>
@@ -174,12 +191,12 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
                 }}
                 onFocus={() => setIsSearchOpen(true)}
                 onKeyDown={handleSearchKeyDown}
-                className="w-full pl-9 pr-10 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-600 dark:text-slate-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                className="w-full pl-9 pr-10 py-2 bg-slate-50 dark:bg-slate-700 border border-slate-200 dark:border-slate-600 rounded-lg text-sm text-slate-600 dark:text-slate-300 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 transition-all"
               />
               <button
                 onClick={navigateToFirstResult}
                 disabled={searchResults.length === 0}
-                className="absolute right-2 top-2 p-1 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-slate-400 transition-colors rounded"
+                className="absolute right-2 top-2 p-1 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-slate-400 transition-colors rounded"
                 title="Go to first result (Enter)"
               >
                 <ArrowRight className="w-4 h-4" />
@@ -206,30 +223,32 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
           )}
         </div>
 
-        <nav className="flex-1 px-3 space-y-1 flex flex-col">
+        <nav className="flex-1 px-3 space-y-1 flex flex-col" aria-label="Main navigation">
           <p className={`px-3 mb-2 text-xs font-semibold text-slate-400 uppercase tracking-wider ${!sidebarOpen && 'hidden'}`}>
             Platform
           </p>
           {navItems.map((item) => (
             <button
               key={item.id}
-              onClick={() => setActiveLayer(item.id)}
+              onClick={() => { setActiveLayer(item.id); setMobileMenuOpen(false); }}
+              aria-current={activeLayer === item.id ? 'page' : undefined}
+              aria-label={!sidebarOpen ? item.label : undefined}
               className={`
                 w-full flex items-center rounded-lg text-sm font-medium transition-all duration-200
                 ${sidebarOpen ? 'px-3 py-2.5' : 'p-2.5 justify-center'}
                 ${activeLayer === item.id
-                  ? 'bg-indigo-50 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-400'
+                  ? 'bg-emerald-50 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-400'
                   : 'text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700 hover:text-slate-900 dark:hover:text-slate-100'}
               `}
             >
-              <item.icon className={`w-5 h-5 ${activeLayer === item.id ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-400'} ${sidebarOpen ? 'mr-3' : ''}`} />
+              <item.icon className={`w-5 h-5 ${activeLayer === item.id ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-400'} ${sidebarOpen ? 'mr-3' : ''}`} />
               {sidebarOpen && <span>{item.label}</span>}
             </button>
           ))}
 
           {/* Logout Button */}
           <button
-            onClick={handleLogout}
+            onClick={() => { handleLogout(); setMobileMenuOpen(false); }}
             className={`w-full flex items-center rounded-lg text-sm font-medium transition-all duration-200 text-slate-600 dark:text-slate-400 hover:bg-rose-50 dark:hover:bg-rose-900/20 hover:text-rose-600 dark:hover:text-rose-400 mt-auto mb-2 ${sidebarOpen ? 'px-3 py-2.5' : 'p-2.5 justify-center'}`}
           >
             <LogOut className={`w-5 h-5 ${sidebarOpen ? 'mr-3' : ''}`} />
@@ -242,12 +261,12 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
             onClick={() => setProfileModalOpen(true)}
             className="flex items-center w-full group hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-lg p-2 -m-2 transition-colors"
           >
-            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-500 flex items-center justify-center text-white text-xs font-bold shadow-sm flex-shrink-0">
               {user?.displayName ? user.displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : user?.email ? user.email.slice(0, 2).toUpperCase() : 'U'}
             </div>
             {sidebarOpen && (
               <div className="ml-3 text-left">
-                <p className="text-sm font-medium text-slate-900 dark:text-slate-100 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                <p className="text-sm font-medium text-slate-900 dark:text-slate-100 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                   {user?.displayName || (user?.email ? user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1) : 'User')}
                 </p>
                 <p className="text-xs text-slate-500 dark:text-slate-400">{user?.email || 'No email'}</p>
@@ -259,7 +278,7 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
 
       {/* Profile Modal */}
       {profileModalOpen && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setProfileModalOpen(false)}>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="profile-modal-title" onClick={() => setProfileModalOpen(false)}>
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -267,7 +286,7 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="relative h-28 bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-600 dark:from-indigo-500 dark:via-purple-500 dark:to-pink-500 animate-gradient bg-[length:200%_200%] rounded-t-2xl">
+            <div className="relative h-28 bg-gradient-to-br from-emerald-600 via-teal-600 to-cyan-700 dark:from-emerald-500 dark:via-teal-500 dark:to-cyan-600 animate-gradient bg-[length:200%_200%] rounded-t-2xl">
               <button
                 onClick={() => setProfileModalOpen(false)}
                 className="absolute top-3 right-3 p-1.5 text-white/80 hover:text-white hover:bg-white/20 rounded-lg transition-colors"
@@ -276,7 +295,7 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
               </button>
               <div className="absolute bottom-0 left-6 transform translate-y-1/2">
                 <div className="relative group">
-                  <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-indigo-500 to-purple-500 flex items-center justify-center text-white text-2xl font-bold shadow-xl ring-4 ring-white dark:ring-slate-800">
+                  <div className="w-20 h-20 rounded-full bg-gradient-to-tr from-emerald-500 to-teal-500 flex items-center justify-center text-white text-2xl font-bold shadow-xl ring-4 ring-white dark:ring-slate-800">
                     {user?.displayName ? user.displayName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : user?.email ? user.email.slice(0, 2).toUpperCase() : 'U'}
                   </div>
                   <button className="absolute inset-0 rounded-full bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
@@ -290,7 +309,7 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
             <div className="pt-12 px-6 pb-5">
               {/* Profile Header */}
               <div className="mb-4">
-                <h2 className="text-xl font-bold text-slate-900 dark:text-slate-100">
+                <h2 id="profile-modal-title" className="text-xl font-bold text-slate-900 dark:text-slate-100">
                   {user?.displayName || (user?.email ? user.email.split('@')[0].charAt(0).toUpperCase() + user.email.split('@')[0].slice(1) : 'User')}
                 </h2>
                 <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
@@ -311,7 +330,7 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
                       </p>
                     </div>
                   </div>
-                  <button className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all">
+                  <button className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all">
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -329,7 +348,7 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
                         </p>
                       </div>
                     </div>
-                    <button className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all flex-shrink-0">
+                    <button className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all flex-shrink-0">
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -345,7 +364,7 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
                         </p>
                       </div>
                     </div>
-                    <button className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all flex-shrink-0">
+                    <button className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all flex-shrink-0">
                       <Edit2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
@@ -362,7 +381,7 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
                       </p>
                     </div>
                   </div>
-                  <button className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 transition-all">
+                  <button className="opacity-0 group-hover:opacity-100 p-1.5 text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 transition-all">
                     <Edit2 className="w-3.5 h-3.5" />
                   </button>
                 </div>
@@ -394,11 +413,19 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
 
       {/* Main Content */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50/50 dark:bg-slate-900/50">
-        <header className="h-20 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-6 md:px-8 sticky top-0 z-20 shadow-sm">
-          <div className="flex items-center">
+        <header className="h-16 md:h-20 bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 md:px-8 sticky top-0 z-20 shadow-sm">
+          <div className="flex items-center gap-3">
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setMobileMenuOpen(true)}
+              className="p-2 text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg md:hidden"
+              aria-label="Open menu"
+            >
+              <Menu className="w-5 h-5" />
+            </button>
             <div className="flex flex-col">
               <div className="flex items-center space-x-2">
-                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-slate-900 via-indigo-900 to-slate-900 dark:from-slate-100 dark:via-indigo-200 dark:to-slate-100 bg-clip-text text-transparent tracking-tight">
+                <h1 className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-slate-900 via-emerald-900 to-slate-900 dark:from-slate-100 dark:via-emerald-200 dark:to-slate-100 bg-clip-text text-transparent tracking-tight">
                   {getPossessiveName()} {navItems.find(n => n.id === activeLayer)?.label || 'Dashboard'}
                 </h1>
               </div>
@@ -409,14 +436,17 @@ export function Layout({ children, activeLayer, setActiveLayer }: LayoutProps) {
           </div>
           <div className="flex items-center space-x-3 md:space-x-4">
             <ThemeToggle />
-            <button className="relative p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors">
+            <button
+              className="relative p-2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+              aria-label="Notifications"
+            >
               <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-slate-800" />
+              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-rose-500 rounded-full border-2 border-white dark:border-slate-800" aria-hidden="true" />
             </button>
           </div>
         </header>
 
-        <main className="flex-1 overflow-auto p-8 scroll-smooth">
+        <main id="main-content" className="flex-1 overflow-auto p-4 md:p-8 scroll-smooth">
           <div className="max-w-7xl mx-auto">
             {children}
           </div>

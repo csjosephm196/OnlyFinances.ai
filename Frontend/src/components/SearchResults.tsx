@@ -20,7 +20,7 @@ export function SearchResults({ results, query, onSelectResult, onClose }: Searc
       <span>
         {parts.map((part, index) => 
           part.toLowerCase() === highlight.toLowerCase() ? (
-            <mark key={index} className="bg-indigo-100 dark:bg-indigo-900/50 text-indigo-900 dark:text-indigo-200 rounded px-0.5">
+            <mark key={index} className="bg-emerald-100 dark:bg-emerald-900/50 text-emerald-900 dark:text-emerald-200 rounded px-0.5">
               {part}
             </mark>
           ) : (
@@ -33,8 +33,8 @@ export function SearchResults({ results, query, onSelectResult, onClose }: Searc
 
   const getCategoryColor = (category: string) => {
     switch (category) {
-      case 'Platform': return 'bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300';
-      case 'Feature': return 'bg-purple-100 dark:bg-purple-900/50 text-purple-700 dark:text-purple-300';
+      case 'Platform': return 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300';
+      case 'Feature': return 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300';
       case 'Metric': return 'bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300';
       case 'Chart': return 'bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300';
       case 'List': return 'bg-rose-100 dark:bg-rose-900/50 text-rose-700 dark:text-rose-300';
@@ -129,7 +129,7 @@ export function SearchResults({ results, query, onSelectResult, onClose }: Searc
                         onSelectResult(result);
                         onClose();
                       }}
-                      className="w-full px-4 py-2.5 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 transition-colors flex items-center justify-between group text-left border-l-2 border-indigo-500"
+                      className="w-full px-4 py-2.5 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 transition-colors flex items-center justify-between group text-left border-l-2 border-emerald-500"
                     >
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-0.5">
@@ -144,7 +144,7 @@ export function SearchResults({ results, query, onSelectResult, onClose }: Searc
                           {highlightText(result.description, query)}
                         </p>
                       </div>
-                      <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all flex-shrink-0 ml-3" />
+                      <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all flex-shrink-0 ml-3" />
                     </button>
                   ))}
 
@@ -171,7 +171,7 @@ export function SearchResults({ results, query, onSelectResult, onClose }: Searc
                           {highlightText(result.description, query)}
                         </p>
                       </div>
-                      <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-indigo-600 dark:group-hover:text-indigo-400 group-hover:translate-x-0.5 transition-all flex-shrink-0 ml-3" />
+                      <ArrowRight className="w-4 h-4 text-slate-400 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 group-hover:translate-x-0.5 transition-all flex-shrink-0 ml-3" />
                     </button>
                   ))}
                 </div>

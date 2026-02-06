@@ -1,0 +1,68 @@
+/*
+ * Design Tokens — "Natural FinTech" Palette
+ * Primary: Emerald (growth, money, trust)
+ * Accent: Amber/Gold (wealth, premium)
+ * Neutral: Stone (warm, grounded)
+ * Semantic: Emerald=success, Amber=warning, Rose=danger, Teal=info
+ */
+
+:root {
+  /* ── Primary (Emerald) ── */
+  --fin-primary-50: #ecfdf5;
+  --fin-primary-100: #d1fae5;
+  --fin-primary-200: #a7f3d0;
+  --fin-primary-400: #34d399;
+  --fin-primary-500: #10b981;
+  --fin-primary-600: #059669;
+  --fin-primary-700: #047857;
+  --fin-primary-900: #064e3b;
+
+  /* ── Accent (Amber / Gold) ── */
+  --fin-accent-50: #fffbeb;
+  --fin-accent-100: #fef3c7;
+  --fin-accent-200: #fde68a;
+  --fin-accent-400: #fbbf24;
+  --fin-accent-500: #f59e0b;
+  --fin-accent-600: #d97706;
+  --fin-accent-700: #b45309;
+  --fin-accent-900: #78350f;
+
+  /* ── Info (Teal) ── */
+  --fin-info-50: #f0fdfa;
+  --fin-info-100: #ccfbf1;
+  --fin-info-500: #14b8a6;
+  --fin-info-600: #0d9488;
+  --fin-info-700: #0f766e;
+
+  /* ── Chart Palette (color-blind safe, no purple/blue) ── */
+  --chart-cb-1: #059669; /* emerald */
+  --chart-cb-2: #d97706; /* amber */
+  --chart-cb-3: #0d9488; /* teal */
+  --chart-cb-4: #dc2626; /* red */
+  --chart-cb-5: #ca8a04; /* yellow */
+  --chart-cb-6: #0891b2; /* cyan */
+  --chart-cb-7: #65a30d; /* lime */
+  --chart-cb-8: #9a3412; /* burnt orange */
+
+  /* ── Focus Ring ── */
+  --focus-ring: #10b981; /* emerald-500 */
+
+  /* ── Spacing Scale ── */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-12: 3rem;
+
+  /* ── Shadow Scale ── */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+
+  /* ── Transition Durations ── */
+  --duration-fast: 150ms;
+  --duration-normal: 200ms;
+  --duration-slow: 500ms;
+}

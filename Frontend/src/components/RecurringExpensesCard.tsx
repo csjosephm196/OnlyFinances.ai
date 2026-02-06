@@ -21,7 +21,7 @@ const FREQUENCY_LABELS: Record<string, string> = {
 const FREQUENCY_COLORS: Record<string, string> = {
     weekly: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
     biweekly: 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400',
-    monthly: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
+    monthly: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
     quarterly: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
     yearly: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
 };
@@ -82,8 +82,8 @@ export function RecurringExpensesCard({ transactions }: RecurringExpensesCardPro
         <div className="bg-white dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center">
-                    <div className="p-2 bg-purple-100 dark:bg-purple-900/30 rounded-lg mr-3">
-                        <RefreshCw className="w-5 h-5 text-purple-600 dark:text-purple-400" />
+                    <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg mr-3">
+                        <RefreshCw className="w-5 h-5 text-amber-600 dark:text-amber-400" />
                     </div>
                     <div>
                         <h3 className="font-semibold text-lg text-slate-900 dark:text-slate-100">
@@ -107,7 +107,7 @@ export function RecurringExpensesCard({ transactions }: RecurringExpensesCardPro
             {/* Loading State */}
             {loading && !data && (
                 <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-8 h-8 text-purple-500 animate-spin" />
+                    <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
                     <span className="ml-3 text-slate-500">Analyzing transactions...</span>
                 </div>
             )}
@@ -137,12 +137,12 @@ export function RecurringExpensesCard({ transactions }: RecurringExpensesCardPro
             {data && data.total_detected > 0 && (
                 <>
                     <div className="grid grid-cols-2 gap-4 mb-6">
-                        <div className="bg-gradient-to-br from-purple-50 to-indigo-50 dark:from-purple-950/30 dark:to-indigo-950/30 rounded-lg p-4 border border-purple-100 dark:border-purple-900/50">
+                        <div className="bg-gradient-to-br from-amber-50 to-emerald-50 dark:from-amber-950/30 dark:to-emerald-950/30 rounded-lg p-4 border border-amber-100 dark:border-amber-900/50">
                             <div className="flex items-center mb-1">
-                                <DollarSign className="w-4 h-4 text-purple-600 dark:text-purple-400 mr-1" />
-                                <span className="text-sm text-purple-600 dark:text-purple-400 font-medium">Monthly Total</span>
+                                <DollarSign className="w-4 h-4 text-amber-600 dark:text-amber-400 mr-1" />
+                                <span className="text-sm text-amber-600 dark:text-amber-400 font-medium">Monthly Total</span>
                             </div>
-                            <p className="text-2xl font-bold text-purple-700 dark:text-purple-300">
+                            <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">
                                 ${data.monthly_total.toFixed(2)}
                             </p>
                         </div>

@@ -84,7 +84,7 @@ export function UploadHistoryDropdown({ onSelect }: UploadHistoryDropdownProps) 
             case 'balancesheet':
                 return { icon: Layers, label: 'Balance Sheet', color: 'text-emerald-600 dark:text-emerald-400', bg: 'bg-emerald-100 dark:bg-emerald-900/30' };
             case 'incomestatement':
-                return { icon: BarChart3, label: 'Income Statement', color: 'text-purple-600 dark:text-purple-400', bg: 'bg-purple-100 dark:bg-purple-900/30' };
+                return { icon: BarChart3, label: 'Income Statement', color: 'text-amber-600 dark:text-amber-400', bg: 'bg-amber-100 dark:bg-amber-900/30' };
         }
     };
 
@@ -294,7 +294,7 @@ export function UploadHistoryDropdown({ onSelect }: UploadHistoryDropdownProps) 
                     bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700
                     hover:bg-slate-200 dark:hover:bg-slate-700 hover:border-slate-300 dark:hover:border-slate-600
                     text-slate-700 dark:text-slate-300
-                    ${isOpen ? 'ring-2 ring-indigo-500/50' : ''}
+                    ${isOpen ? 'ring-2 ring-emerald-500/50' : ''}
                 `}
             >
                 {isLoadingHistory ? (
@@ -304,7 +304,7 @@ export function UploadHistoryDropdown({ onSelect }: UploadHistoryDropdownProps) 
                 )}
                 <span className="hidden sm:inline">History</span>
                 {totalCount > 0 && (
-                    <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-indigo-100 dark:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 rounded-full">
+                    <span className="ml-1.5 px-1.5 py-0.5 text-xs bg-emerald-100 dark:bg-emerald-900/50 text-emerald-700 dark:text-emerald-300 rounded-full">
                         {totalCount}
                     </span>
                 )}
@@ -325,7 +325,7 @@ export function UploadHistoryDropdown({ onSelect }: UploadHistoryDropdownProps) 
                                 {selectionMode && selectedIds.size >= 2 && (
                                     <button
                                         onClick={handleMergeSelected}
-                                        className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-indigo-600 hover:bg-indigo-700 rounded-md transition-colors"
+                                        className="flex items-center gap-1 px-2 py-1 text-xs font-medium text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors"
                                     >
                                         <Combine className="w-3 h-3" />
                                         Merge ({selectedIds.size})
@@ -336,7 +336,7 @@ export function UploadHistoryDropdown({ onSelect }: UploadHistoryDropdownProps) 
                                         setSelectionMode(!selectionMode);
                                         setSelectedIds(new Set());
                                     }}
-                                    className="text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300"
+                                    className="text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300"
                                 >
                                     {selectionMode ? 'Cancel' : 'Select'}
                                 </button>
@@ -347,7 +347,7 @@ export function UploadHistoryDropdown({ onSelect }: UploadHistoryDropdownProps) 
                     <div className="max-h-80 overflow-y-auto">
                         {isLoading && (
                             <div className="absolute inset-0 bg-white/80 dark:bg-slate-800/80 flex items-center justify-center z-10">
-                                <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
+                                <Loader2 className="w-6 h-6 animate-spin text-emerald-600" />
                             </div>
                         )}
 
@@ -382,7 +382,7 @@ export function UploadHistoryDropdown({ onSelect }: UploadHistoryDropdownProps) 
                                                                     className="flex-shrink-0 mt-0.5"
                                                                 >
                                                                     {selectedIds.has(item.id) ? (
-                                                                        <CheckSquare className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+                                                                        <CheckSquare className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
                                                                     ) : (
                                                                         <Square className="w-5 h-5 text-slate-400 dark:text-slate-500" />
                                                                     )}

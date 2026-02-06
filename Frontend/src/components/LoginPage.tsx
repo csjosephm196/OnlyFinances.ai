@@ -60,8 +60,8 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 <div className="absolute inset-0 animate-gradient">
                     {/* Animated orbs */}
                     <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-float" />
-                    <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-300/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
-                    <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-pink-300/15 rounded-full blur-3xl animate-float" style={{ animationDelay: '4s' }} />
+                    <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-teal-300/20 rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+                    <div className="absolute top-1/2 left-1/2 w-64 h-64 bg-amber-300/15 rounded-full blur-3xl animate-float" style={{ animationDelay: '4s' }} />
                 </div>
 
                 {/* Content overlay */}
@@ -117,7 +117,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                 <div className="w-full max-w-md">
                     {/* Mobile Logo */}
                     <div className="flex items-center justify-center mb-8 lg:hidden">
-                        <div className="w-10 h-10 bg-gradient-to-br from-indigo-600 to-purple-600 rounded-xl flex items-center justify-center mr-3">
+                        <div className="w-10 h-10 bg-gradient-to-br from-emerald-600 to-teal-600 rounded-xl flex items-center justify-center mr-3">
                             <Sparkles className="w-6 h-6 text-white" />
                         </div>
                         <span className="text-2xl font-bold text-slate-900 dark:text-white">OnlyFinances.ai</span>
@@ -171,7 +171,8 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                                     value={email}
                                     onChange={(e) => setEmail(e.target.value)}
                                     required
-                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                                    autoComplete="email"
+                                    className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
                                     placeholder="you@example.com"
                                 />
                             </div>
@@ -187,13 +188,15 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         required
-                                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200 pr-12"
+                                        autoComplete={isSignUp ? 'new-password' : 'current-password'}
+                                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200 pr-12"
                                         placeholder="••••••••"
                                     />
                                     <button
                                         type="button"
                                         onClick={() => setShowPassword(!showPassword)}
                                         className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-colors"
+                                        aria-label={showPassword ? 'Hide password' : 'Show password'}
                                     >
                                         {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                                     </button>
@@ -211,7 +214,8 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                                         value={confirmPassword}
                                         onChange={(e) => setConfirmPassword(e.target.value)}
                                         required
-                                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-all duration-200"
+                                        autoComplete="new-password"
+                                        className="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-600 rounded-xl text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-transparent transition-all duration-200"
                                         placeholder="••••••••"
                                     />
                                 </div>
@@ -219,7 +223,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
 
                             {/* Error Display */}
                             {(error || localError) && (
-                                <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-sm">
+                                <div role="alert" className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-100 dark:border-red-800 rounded-xl text-red-600 dark:text-red-400 text-sm">
                                     {localError || error}
                                 </div>
                             )}
@@ -228,7 +232,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full py-3.5 bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-semibold rounded-xl hover:from-indigo-700 hover:to-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-indigo-500/25"
+                                className="w-full py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 text-white font-semibold rounded-xl hover:from-emerald-700 hover:to-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-emerald-500 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-emerald-500/25"
                             >
                                 {loading ? (
                                     <span className="flex items-center justify-center gap-2">
@@ -252,7 +256,7 @@ export function LoginPage({ onLoginSuccess }: LoginPageProps) {
                                     setIsSignUp(!isSignUp);
                                     setLocalError(null);
                                 }}
-                                className="font-semibold text-indigo-600 dark:text-indigo-400 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors"
+                                className="font-semibold text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 transition-colors"
                             >
                                 {isSignUp ? 'Sign in' : 'Sign up'}
                             </button>
